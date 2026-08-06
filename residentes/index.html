@@ -1330,6 +1330,7 @@ function renderTurmaList() {
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
         <button onclick="preencherAvaliacao('${id}','${turmaYear}')" style="background:var(--verde);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-family:var(--font);font-weight:700;cursor:pointer;white-space:nowrap">📋 Avaliar</button>
+        <button onclick="cadastrarEmailResidente('${turmaYear}','${id}')" style="background:var(--cinza-f);color:var(--azul);border:1px solid var(--cinza-m);border-radius:6px;padding:5px 10px;font-size:10px;font-family:var(--font);font-weight:700;cursor:pointer;white-space:nowrap">✉️ ${r.email?'Alterar':'Cadastrar'} e-mail</button>
         <button onclick="removerResidente('${turmaYear}','${id}')" style="background:none;border:none;font-size:14px;cursor:pointer;color:var(--cinza-e);padding:2px">🗑️</button>
       </div>
     </div>`;
@@ -1371,6 +1372,16 @@ function removerResidente(year, id) {
   renderTurmaList();
   updateResidentesList();
   showToast('Residente removido','e');
+}
+
+function cadastrarEmailResidente(year,id){
+  const r=APP.residentes[year]&&APP.residentes[year][id];if(!r)return;
+  const email=prompt('E-mail da conta Google de '+r.name+':',r.email||'');if(email===null)return;
+  const normalizado=email.trim().toLowerCase();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizado)){showToast('E-mail inválido','e');return;}
+  const existe=['R1','R2','R3'].some(yr=>Object.values(APP.residentes[yr]||{}).some(x=>x.id!==id&&(x.email||'').toLowerCase()===normalizado));
+  if(existe){showToast('Este e-mail já está cadastrado','e');return;}
+  r.email=normalizado;saveApp();renderTurmaList();sincronizarAuto('residentes',APP);showToast('✓ E-mail vinculado','s');
 }
 
 function preencherAvaliacao(id, year) {
