@@ -355,6 +355,7 @@ textarea{resize:none;height:80px}
 
   <div class="card">
     <button class="btn btn-primary" onclick="abrirModalAddInterno()">+ Adicionar Interno</button>
+    <button class="btn btn-secondary" onclick="importarGrupoG2()">⬇ Importar G2 da turma 40/41 (11 alunos)</button>
   </div>
 
   <div class="card" style="padding-top:12px;padding-bottom:8px">
@@ -826,6 +827,7 @@ function renderHomeOverview(){
       <div class="intern-info">
         <div class="intern-name">${it.name}</div>
         <div class="mini-stats">
+          ${it.group?`<span class="mini-stat azul">${it.group}</span>`:''}
           <span class="mini-stat ${cls}">${gPct!==null?gPct+'% freq':'sem reg.'}</span>
           <span class="mini-stat ${selfDone>0?'azul':''}" style="${selfDone>0?'background:rgba(0,114,188,.1);color:var(--azul-c)':''}">Auto: ${selfDone}/45</span>
           <span class="mini-stat ${precDone>0?'verde':''}">Prec: ${precDone}/45</span>
@@ -887,6 +889,26 @@ function adicionarInterno(){
   const id=uid();
   APP.interns[id]={id,name:nome,attendance:{},selfEval:{},precEval:{},selfComments:'',precComments:'',precGlobal:''};
   save(); fecharModal('modal-add'); renderTurma(); showToast('✓ '+nome+' adicionado','s');
+}
+function importarGrupoG2(){
+  const nomes=[
+    'Lara Jhulie Sakamoto Queiroz','Luane Pamela Silva Florêncio','Alessandra Souza dos Santos',
+    'Giulianna Pereira Cavalcante','Marifran Marques de Aguiar','Samuel Brandão de Almeida',
+    'Lucineia Nascimento Bezerra','Rhonan Alberto de Oliveira Pereira','Virgínia Souza Galvão',
+    'Vitor Fonseca Andrade','Davi Soares Lima'
+  ];
+  if(!confirm('Importar os 11 alunos do G2?\n\nOs internos já cadastrados serão preservados.')) return;
+  const existentes=new Set(Object.values(APP.interns).map(it=>it.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim()));
+  let adicionados=0;
+  nomes.forEach(nome=>{
+    const chave=nome.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+    if(existentes.has(chave)) return;
+    const id=uid();
+    APP.interns[id]={id,name:nome,group:'G2',attendance:{},selfEval:{},precEval:{},selfComments:'',precComments:'',precGlobal:''};
+    existentes.add(chave); adicionados++;
+  });
+  save(); renderTurma(); renderHome();
+  showToast(adicionados?`✓ ${adicionados} alunos do G2 importados`:'G2 já estava cadastrado','s');
 }
 function removerInterno(id){
   const it=APP.interns[id];
