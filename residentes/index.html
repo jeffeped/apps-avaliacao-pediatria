@@ -8,8 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ResidPed UEA">
 <meta name="mobile-web-app-capable" content="yes">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
 <title>ResidPed UEA – Avaliação de Residência Médica em Pediatria</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -278,6 +278,22 @@ textarea{resize:none;height:80px}
 .rank-pos.p2{background:#C0C0C0;color:#555}
 .rank-pos.p3{background:#CD7F32;color:#5C3300}
 
+/* PONTO / CHECK-IN */
+.ponto-status{padding:18px;border-radius:14px;background:linear-gradient(135deg,#F2FBF7,#E4F5EC);border:1px solid #C8E8D7;text-align:center}
+.ponto-status.fora{background:linear-gradient(135deg,#FFF8E8,#FFF1C9);border-color:#F1D48B}
+.ponto-clock{font-size:31px;font-weight:800;color:var(--verde);letter-spacing:-1px}
+.ponto-state{font-size:13px;font-weight:700;margin-top:3px;color:var(--cinza-e)}
+.ponto-place{font-size:11px;line-height:1.5;margin-top:10px;color:var(--cinza-e)}
+.ponto-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.ponto-actions .btn{padding:14px 8px}
+.ponto-history{display:flex;gap:10px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--cinza-m)}
+.ponto-history:last-child{border-bottom:0}
+.ponto-dot{width:10px;height:10px;border-radius:50%;background:var(--verde);margin-top:5px;flex-shrink:0}
+.ponto-dot.out{background:var(--azul)}
+.ponto-history-main{flex:1;font-size:12px;line-height:1.5}
+.ponto-history-time{font-size:13px;font-weight:800;white-space:nowrap}
+.gps-note{font-size:10px;color:var(--cinza-e);line-height:1.5;margin-top:10px}
+
 /* INSTALL/UPDATE BANNERS */
 #install-banner{position:fixed;bottom:0;left:0;right:0;z-index:8500;background:#fff;border-top:1px solid var(--cinza-m);padding:14px 16px;display:none;align-items:center;gap:12px;max-width:480px;margin:0 auto;box-shadow:0 -4px 20px rgba(0,0,0,.1)}
 #update-banner{position:fixed;top:0;left:0;right:0;z-index:8500;background:var(--azul);padding:12px 16px;display:none;align-items:center;gap:10px;max-width:480px;margin:0 auto}
@@ -316,6 +332,7 @@ textarea{resize:none;height:80px}
   <div class="tab-bar">
     <button class="tab-btn active" data-screen="home" onclick="showScreen('home',this)"><span class="ti">🏠</span>Início</button>
     <button class="tab-btn" data-screen="turma" onclick="showScreen('turma',this)"><span class="ti">👥</span>Residentes</button>
+    <button class="tab-btn" data-screen="ponto" onclick="showScreen('ponto',this)"><span class="ti">📍</span>Ponto</button>
     <button class="tab-btn" data-screen="avaliacao" onclick="showScreen('avaliacao',this)"><span class="ti">📋</span>Avaliação</button>
     <button class="tab-btn" data-screen="historico" onclick="showScreen('historico',this)"><span class="ti">📊</span>Histórico</button>
     <button class="tab-btn" data-screen="feedback" onclick="showScreen('feedback',this)"><span class="ti">💬</span>Feedback</button>
@@ -745,6 +762,36 @@ textarea{resize:none;height:80px}
 </div>
 
 <!-- ============================================================ -->
+<!-- TELA: PONTO / CHECK-IN -->
+<!-- ============================================================ -->
+<div id="screen-ponto" class="screen">
+  <div class="sec-hdr verde">
+    <h2>📍 Ponto do Estágio</h2>
+    <p>Registre sua entrada e saída no local de estágio</p>
+  </div>
+  <div class="card">
+    <div class="fr">
+      <div class="fg"><label>Ano</label><select id="ponto-ano" onchange="renderPontoResidentes()"><option>R1</option><option>R2</option><option>R3</option></select></div>
+      <div class="fg"><label>Residente</label><select id="ponto-residente" onchange="renderPonto()"></select></div>
+    </div>
+    <div id="ponto-status" class="ponto-status">
+      <div id="ponto-clock" class="ponto-clock">--:--</div>
+      <div id="ponto-state" class="ponto-state">Pronto para registrar</div>
+      <div id="ponto-place" class="ponto-place">A localização será verificada no momento do registro.</div>
+    </div>
+    <div class="ponto-actions">
+      <button id="btn-checkin" class="btn btn-primary" onclick="registrarPonto('entrada')">✓ Fazer check-in</button>
+      <button id="btn-checkout" class="btn btn-secondary" onclick="registrarPonto('saida')">↗ Fazer check-out</button>
+    </div>
+    <div class="gps-note">O aplicativo registra somente a localização no momento do check-in e do check-out. Não há rastreamento contínuo.</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Registros recentes</div>
+    <div id="ponto-historico"></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
 <!-- TELA: DASHBOARD -->
 <!-- ============================================================ -->
 <div id="screen-dashboard" class="screen">
@@ -792,6 +839,18 @@ textarea{resize:none;height:80px}
       <label>Nome do Preceptor</label>
       <input type="text" id="cfg-preceptor" placeholder="Nome completo" oninput="saveConfig()">
     </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📍 Local permitido para o ponto</div>
+    <div class="fg"><label>Nome do local de estágio</label><input type="text" id="cfg-local-nome" placeholder="Ex: Hospital Universitário" oninput="saveConfig()"></div>
+    <div class="fr">
+      <div class="fg"><label>Latitude</label><input type="number" step="any" id="cfg-local-lat" placeholder="-3.1000" oninput="saveConfig()"></div>
+      <div class="fg"><label>Longitude</label><input type="number" step="any" id="cfg-local-lng" placeholder="-60.0000" oninput="saveConfig()"></div>
+    </div>
+    <div class="fg"><label>Raio permitido (metros)</label><input type="number" min="20" max="5000" id="cfg-local-raio" value="150" oninput="saveConfig()"></div>
+    <button class="btn btn-secondary" onclick="usarLocalAtual()">📍 Usar minha localização atual</button>
+    <div class="gps-note">Sem coordenadas configuradas, o ponto registra a localização, mas não bloqueia registros fora do local.</div>
   </div>
 
   <!-- R1 -->
@@ -953,14 +1012,15 @@ let APP = {
     R2: { moduloName:'', startDate:'', endDate:'', morning:'Manhã', afternoon:'Tarde' },
     R3: { moduloName:'', startDate:'', endDate:'', morning:'Manhã', afternoon:'Tarde' }
   },
-  residentes: { R1:{}, R2:{}, R3:{} }
+  residentes: { R1:{}, R2:{}, R3:{} },
+  pontoConfig: { nome:'', latitude:null, longitude:null, raio:150 }
 };
 
 // Legacy keys (avaliacoes, autoavaliacoes)
 function loadArr(key) { try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; } }
 function saveArr(key, data) { try { localStorage.setItem(key, JSON.stringify(data)); } catch(e){} }
 function saveApp() { try { localStorage.setItem(KEY, JSON.stringify(APP)); } catch(e){} }
-function loadApp() { try { const d=JSON.parse(localStorage.getItem(KEY)); if(d) APP=d; } catch(e){} }
+function loadApp() { try { const d=JSON.parse(localStorage.getItem(KEY)); if(d) APP=d; } catch(e){} if(!APP.pontoConfig) APP.pontoConfig={nome:'',latitude:null,longitude:null,raio:150}; }
 
 // Current state
 let currentDay = null;
@@ -1012,7 +1072,61 @@ function showScreen(name, btn) {
   if(name==='historico') renderHistorico();
   if(name==='dashboard') renderDashboard();
   if(name==='autoaval') renderAutoCompetencias();
+  if(name==='ponto') { renderPontoResidentes(); renderPonto(); }
 }
+
+// ============================================================
+// PONTO / CHECK-IN COM GEOLOCALIZAÇÃO
+// ============================================================
+const PONTO_KEY='residped_pontos_v1';
+function getPontos(){return loadArr(PONTO_KEY);}
+function savePontos(v){saveArr(PONTO_KEY,v);}
+function pontoNow(){
+  const now=new Date(), parts=new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Manaus',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).formatToParts(now).reduce((a,p)=>(a[p.type]=p.value,a),{});
+  return {iso:now.toISOString(),data:`${parts.year}-${parts.month}-${parts.day}`,hora:`${parts.hour}:${parts.minute}:${parts.second}`};
+}
+function escapeHtml(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function renderPontoResidentes(){
+  const ano=document.getElementById('ponto-ano').value, sel=document.getElementById('ponto-residente'), anterior=sel.value;
+  const lista=Object.values(APP.residentes[ano]||{});
+  sel.innerHTML=lista.length?'<option value="">Selecione...</option>'+lista.map(r=>`<option value="${escapeHtml(r.id)}">${escapeHtml(r.name)}</option>`).join(''):'<option value="">Nenhum residente cadastrado</option>';
+  if(lista.some(r=>r.id===anterior)) sel.value=anterior;
+}
+function pontoSelecionado(){
+  const ano=document.getElementById('ponto-ano').value,id=document.getElementById('ponto-residente').value;
+  return {ano,id,residente:(APP.residentes[ano]||{})[id]};
+}
+function registroAberto(id){return [...getPontos()].reverse().find(p=>p.residenteId===id&&p.tipo==='entrada'&&!p.fechado)||null;}
+function fmtPontoData(iso){return new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Manaus',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(iso));}
+function renderPonto(){
+  const elClock=document.getElementById('ponto-clock'); if(!elClock)return;
+  elClock.textContent=pontoNow().hora.slice(0,5);
+  const {id,residente}=pontoSelecionado(), aberto=id?registroAberto(id):null, cfg=APP.pontoConfig||{};
+  document.getElementById('ponto-state').textContent=!residente?'Selecione o residente':aberto?'Check-in realizado às '+aberto.hora.slice(0,5):'Pronto para registrar a entrada';
+  document.getElementById('ponto-place').textContent=cfg.nome?`Local: ${cfg.nome} · raio de ${Number(cfg.raio)||150} m`:'Local ainda não configurado pelo preceptor';
+  document.getElementById('btn-checkin').disabled=!residente||!!aberto;
+  document.getElementById('btn-checkout').disabled=!residente||!aberto;
+  const hist=document.getElementById('ponto-historico'), pontos=getPontos().filter(p=>!id||p.residenteId===id).slice(-20).reverse();
+  hist.innerHTML=pontos.length?pontos.map(p=>`<div class="ponto-history"><span class="ponto-dot ${p.tipo==='saida'?'out':''}"></span><div class="ponto-history-main"><strong>${p.tipo==='entrada'?'Entrada':'Saída'} · ${escapeHtml(p.residenteNome)}</strong><br>${fmtPontoData(p.timestamp)} · ${escapeHtml(p.localNome||'Local não configurado')}<br><span style="color:var(--cinza-e)">${p.distancia==null?'Localização registrada':Math.round(p.distancia)+' m do local'} · precisão ${Math.round(p.precisao||0)} m</span></div><div class="ponto-history-time">${p.hora.slice(0,5)}</div></div>`).join(''):'<div class="empty"><div class="ei">📍</div><p>Nenhum ponto registrado</p></div>';
+}
+function distanciaMetros(a,b,c,d){const R=6371000,x=(c-a)*Math.PI/180,y=(d-b)*Math.PI/180,s=Math.sin(x/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(y/2)**2;return 2*R*Math.atan2(Math.sqrt(s),Math.sqrt(1-s));}
+function obterLocalizacao(){return new Promise((resolve,reject)=>{if(!navigator.geolocation)return reject(new Error('Geolocalização não disponível neste aparelho.'));navigator.geolocation.getCurrentPosition(resolve,()=>reject(new Error('Não foi possível obter a localização. Verifique a permissão do GPS.')),{enableHighAccuracy:true,timeout:15000,maximumAge:0});});}
+async function registrarPonto(tipo){
+  const s=pontoSelecionado(); if(!s.residente){showToast('Selecione o residente','e');return;}
+  const aberto=registroAberto(s.id); if(tipo==='entrada'&&aberto){showToast('Já existe um check-in aberto','e');return;} if(tipo==='saida'&&!aberto){showToast('Faça o check-in primeiro','e');return;}
+  const btn=document.getElementById(tipo==='entrada'?'btn-checkin':'btn-checkout'),texto=btn.textContent;btn.disabled=true;btn.textContent='Obtendo GPS...';
+  try{
+    const pos=await obterLocalizacao(),cfg=APP.pontoConfig||{},lat=pos.coords.latitude,lng=pos.coords.longitude;
+    const configurado=Number.isFinite(Number(cfg.latitude))&&Number.isFinite(Number(cfg.longitude))&&cfg.latitude!==null&&cfg.longitude!==null&&cfg.latitude!==''&&cfg.longitude!=='';
+    const dist=configurado?distanciaMetros(Number(cfg.latitude),Number(cfg.longitude),lat,lng):null,raio=Number(cfg.raio)||150;
+    if(configurado&&dist>raio){showToast(`Fora do local permitido (${Math.round(dist)} m)`,'e');return;}
+    const agora=pontoNow(),registro={id:uid(),tipo,residenteId:s.id,residenteNome:s.residente.name,ano:s.ano,timestamp:agora.iso,data:agora.data,hora:agora.hora,latitude:lat,longitude:lng,precisao:pos.coords.accuracy,distancia:dist,dentroDoRaio:dist===null?null:dist<=raio,localNome:cfg.nome||'',raioPermitido:raio,fechado:false,entradaId:tipo==='saida'?aberto.id:null};
+    const pontos=getPontos();if(tipo==='saida'){const original=pontos.find(p=>p.id===aberto.id);if(original){original.fechado=true;original.saidaId=registro.id;}}pontos.push(registro);savePontos(pontos);
+    if(tipo==='entrada'){if(!s.residente.attendance)s.residente.attendance={};if(!s.residente.attendance[agora.data])s.residente.attendance[agora.data]={morning:null,afternoon:null};s.residente.attendance[agora.data][Number(agora.hora.slice(0,2))<13?'morning':'afternoon']='P';saveApp();}
+    sincronizarAuto('ponto',registro);showToast(tipo==='entrada'?'✓ Check-in registrado!':'✓ Check-out registrado!','s');renderPonto();
+  }catch(e){showToast(e.message||'Falha ao registrar o ponto','e');}finally{btn.textContent=texto;renderPonto();}
+}
+async function usarLocalAtual(){try{const pos=await obterLocalizacao();document.getElementById('cfg-local-lat').value=pos.coords.latitude.toFixed(7);document.getElementById('cfg-local-lng').value=pos.coords.longitude.toFixed(7);saveConfig();showToast('✓ Local definido','s');}catch(e){showToast(e.message,'e');}}
 
 // ============================================================
 // HOME SCREEN
@@ -1563,8 +1677,9 @@ function limparTodosDados() {
   if(!confirm('Tem certeza? Todos os dados serão excluídos permanentemente.')) return;
   localStorage.removeItem('avaliacoes');
   localStorage.removeItem('autoavaliacoes');
+  localStorage.removeItem(PONTO_KEY);
   localStorage.removeItem(KEY);
-  APP={ preceptorName:'', programas:{ R1:{moduloName:'',startDate:'',endDate:'',morning:'Manhã',afternoon:'Tarde'}, R2:{moduloName:'',startDate:'',endDate:'',morning:'Manhã',afternoon:'Tarde'}, R3:{moduloName:'',startDate:'',endDate:'',morning:'Manhã',afternoon:'Tarde'} }, residentes:{R1:{},R2:{},R3:{}} };
+  APP={ preceptorName:'', programas:{ R1:{moduloName:'',startDate:'',endDate:'',morning:'Manhã',afternoon:'Tarde'}, R2:{moduloName:'',startDate:'',endDate:'',morning:'Manhã',afternoon:'Tarde'}, R3:{moduloName:'',startDate:'',endDate:'',morning:'Manhã',afternoon:'Tarde'} }, residentes:{R1:{},R2:{},R3:{}}, pontoConfig:{nome:'',latitude:null,longitude:null,raio:150} };
   renderDashboard();
   showToast('Dados excluídos','e');
 }
@@ -1574,6 +1689,7 @@ function limparTodosDados() {
 // ============================================================
 function saveConfig() {
   APP.preceptorName=document.getElementById('cfg-preceptor').value.trim();
+  APP.pontoConfig={nome:document.getElementById('cfg-local-nome').value.trim(),latitude:document.getElementById('cfg-local-lat').value===''?null:Number(document.getElementById('cfg-local-lat').value),longitude:document.getElementById('cfg-local-lng').value===''?null:Number(document.getElementById('cfg-local-lng').value),raio:Number(document.getElementById('cfg-local-raio').value)||150};
   ['R1','R2','R3'].forEach(yr=>{
     if(!APP.programas[yr]) APP.programas[yr]={};
     APP.programas[yr].moduloName=document.getElementById('cfg-'+yr+'-mod').value.trim();
@@ -1587,6 +1703,7 @@ function saveConfig() {
 
 function restoreConfig() {
   document.getElementById('cfg-preceptor').value=APP.preceptorName||'';
+  const c=APP.pontoConfig||{};document.getElementById('cfg-local-nome').value=c.nome||'';document.getElementById('cfg-local-lat').value=c.latitude??'';document.getElementById('cfg-local-lng').value=c.longitude??'';document.getElementById('cfg-local-raio').value=c.raio||150;
   ['R1','R2','R3'].forEach(yr=>{
     const p=APP.programas[yr]||{};
     document.getElementById('cfg-'+yr+'-mod').value=p.moduloName||'';
@@ -1674,7 +1791,8 @@ async function syncData() {
     ok=await enviarParaSheets('batch',{
       avaliacoes:loadArr('avaliacoes'),
       autoavaliacoes:loadArr('autoavaliacoes'),
-      residentes:APP
+      residentes:APP,
+      pontos:getPontos()
     });
   }
   showToast(ok?'☁️ Sincronizado!':'📵 Sem conexão',ok?'s':'e');
@@ -1731,6 +1849,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   calcFinal();
   renderAutoCompetencias();
   atualizarStatusSync();
+  setInterval(()=>{if(document.getElementById('screen-ponto').classList.contains('active'))renderPonto();},30000);
   window.addEventListener('online',()=>{showToast('🌐 Online','s');setTimeout(processarFila,1000);});
 });
 </script>
