@@ -1,0 +1,13 @@
+{
+  "name": "ResidPed UEA – Avaliação da Residência em Pediatria",
+  "short_name": "ResidPed UEA",
+  "description": "Frequência e avaliação da Residência Médica em Pediatria da UEA",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#006B3F",
+  "background_color": "#F4F6F8",
+  "lang": "pt-BR",
+  "icons": [{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]
+}

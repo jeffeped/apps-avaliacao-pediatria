@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#004A7C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="InternoPed UEA">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<title>InternoPed UEA – Avaliação do Interno em Pediatria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --azul:#004A7C; --azul-c:#0072BC; --azul-m:#005F9E;
+  --verde:#006B3F; --verde-c:#00A86B;
+  --roxo:#6B2FA0; --roxo-c:#8B4FBF;
+  --amarelo:#F5A623; --vermelho:#D0021B;
+  --cinza-f:#F4F6F8; --cinza-m:#E1E6EB; --cinza-e:#6B7785;
+  --texto:#1A2535;
+  --r:14px; --rs:8px; --font:'Montserrat',sans-serif;
+  --card-shadow:0 4px 24px rgba(0,0,0,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--font);background:var(--cinza-f);color:var(--texto);min-height:100vh;max-width:480px;margin:0 auto;overflow-x:hidden}
+
+/* SPLASH */
+#splash{position:fixed;inset:0;z-index:9999;background:linear-gradient(145deg,var(--azul) 0%,var(--roxo) 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;animation:splashOut .5s ease 2.2s forwards}
+.splash-icon{width:80px;height:80px;border-radius:22px;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:40px;animation:pulse 1.5s ease-in-out infinite}
+#splash h1{color:#fff;font-size:26px;font-weight:800}
+#splash p{color:rgba(255,255,255,.75);font-size:13px;font-weight:500}
+.uea-tag{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:11px;font-weight:600;padding:4px 14px;border-radius:20px;letter-spacing:1px;text-transform:uppercase}
+@keyframes splashOut{to{opacity:0;pointer-events:none;visibility:hidden}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+
+/* HEADER */
+#app-header{position:sticky;top:0;z-index:100;background:linear-gradient(135deg,var(--azul) 0%,var(--azul-m) 100%);padding:14px 16px 10px;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.header-brand{display:flex;align-items:center;gap:10px}
+.header-icon{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer}
+.header-brand h1{color:#fff;font-size:16px;font-weight:800}
+.header-brand p{color:rgba(255,255,255,.75);font-size:10px;font-weight:500}
+.hbtn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .2s}
+.hbtn:active{background:rgba(255,255,255,.25)}
+
+/* TABS */
+.tab-bar{display:flex;overflow-x:auto;gap:4px;padding:0 4px 8px;scrollbar-width:none}
+.tab-bar::-webkit-scrollbar{display:none}
+.tab-btn{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px;border-radius:10px;border:none;cursor:pointer;background:rgba(255,255,255,.12);color:rgba(255,255,255,.65);font-family:var(--font);font-size:9.5px;font-weight:600;transition:all .2s;min-width:64px}
+.tab-btn .ti{font-size:16px}
+.tab-btn.active{background:#fff;color:var(--azul);box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.tab-btn:active{transform:scale(.95)}
+
+/* SCREENS */
+.screen{display:none;min-height:calc(100vh - 120px);padding-bottom:30px}
+.screen.active{display:block;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* SECTION HEADER */
+.sec-hdr{padding:18px 16px}
+.sec-hdr.azul{background:linear-gradient(135deg,var(--azul) 0%,var(--azul-c) 100%)}
+.sec-hdr.roxo{background:linear-gradient(135deg,var(--roxo) 0%,var(--roxo-c) 100%)}
+.sec-hdr.verde{background:linear-gradient(135deg,var(--verde) 0%,var(--verde-c) 100%)}
+.sec-hdr.escuro{background:linear-gradient(135deg,#1A2535 0%,#2C3E55 100%)}
+.sec-hdr h2{color:#fff;font-size:18px;font-weight:800}
+.sec-hdr p{color:rgba(255,255,255,.8);font-size:12px;margin-top:3px}
+
+/* CARD */
+.card{background:#fff;border-radius:var(--r);padding:16px;box-shadow:var(--card-shadow);margin:12px 12px 0}
+.card-title{font-size:13px;font-weight:700;color:var(--texto);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--azul-c);color:#fff}
+.badge.verde{background:var(--verde)}
+.badge.roxo{background:var(--roxo)}
+
+/* FORM */
+.fg{margin-bottom:14px}
+label{display:block;font-size:11px;font-weight:700;color:var(--cinza-e);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+input[type=text],input[type=date],select,textarea{width:100%;padding:11px 13px;border:1.5px solid var(--cinza-m);border-radius:var(--rs);font-family:var(--font);font-size:13px;color:var(--texto);background:#fff;outline:none;transition:border-color .2s,box-shadow .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--azul-c);box-shadow:0 0 0 3px rgba(0,114,188,.1)}
+textarea{resize:none;height:80px}
+.fr{display:flex;gap:10px}
+.fr>*{flex:1}
+
+/* BTN */
+.btn{display:block;width:100%;padding:14px;border:none;border-radius:var(--rs);font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;text-align:center}
+.btn+.btn{margin-top:10px}
+.btn-primary{background:linear-gradient(135deg,var(--azul) 0%,var(--azul-c) 100%);color:#fff;box-shadow:0 4px 12px rgba(0,74,124,.35)}
+.btn-verde{background:linear-gradient(135deg,var(--verde) 0%,var(--verde-c) 100%);color:#fff;box-shadow:0 4px 12px rgba(0,107,63,.35)}
+.btn-roxo{background:linear-gradient(135deg,var(--roxo) 0%,var(--roxo-c) 100%);color:#fff;box-shadow:0 4px 12px rgba(107,47,160,.35)}
+.btn-secondary{background:var(--cinza-f);color:var(--texto);border:1.5px solid var(--cinza-m)}
+.btn-danger{background:rgba(208,2,27,.08);color:var(--vermelho);border:1.5px solid rgba(208,2,27,.2)}
+.btn-sm{padding:8px 14px;font-size:12px;width:auto;display:inline-block}
+.btn:active{transform:scale(.98)}
+
+/* ALERT */
+.alert{border-radius:var(--rs);padding:10px 12px;font-size:12px;margin:10px 0;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+.alert.info{background:rgba(0,114,188,.08);border-left:3px solid var(--azul-c)}
+.alert.verde{background:rgba(0,107,63,.08);border-left:3px solid var(--verde)}
+.alert.aviso{background:rgba(245,166,35,.12);border-left:3px solid var(--amarelo)}
+
+/* MISC */
+.divider{height:1px;background:var(--cinza-f);margin:14px 0}
+.empty{text-align:center;padding:40px 20px;color:var(--cinza-e)}
+.empty .ei{font-size:48px;margin-bottom:10px}
+.empty p{font-size:13px}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--texto);color:#fff;border-radius:10px;padding:12px 20px;font-size:13px;font-weight:600;z-index:9000;opacity:0;transition:all .3s;white-space:nowrap;max-width:90%;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.s{background:var(--verde)}
+.toast.e{background:var(--vermelho)}
+
+/* MODAL */
+.modal-ov{display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,.5);align-items:flex-end;justify-content:center}
+.modal-ov.show{display:flex;animation:fadeIn .2s}
+.modal-box{background:#fff;border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:40px;height:4px;background:var(--cinza-m);border-radius:2px;margin:0 auto 16px}
+.modal-title{font-size:16px;font-weight:800;margin-bottom:14px}
+
+/* ===== HOME: DAILY ATTENDANCE ===== */
+.day-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.day-date{font-size:14px;font-weight:800;color:var(--texto)}
+.day-nav{display:flex;align-items:center;gap:8px}
+.day-nav-btn{background:var(--cinza-f);border:1.5px solid var(--cinza-m);border-radius:6px;padding:5px 10px;font-size:13px;cursor:pointer;transition:background .15s}
+.day-nav-btn:active{background:var(--cinza-m)}
+
+.att-table{width:100%;border-collapse:collapse;font-size:11px}
+.att-table th{background:linear-gradient(135deg,var(--azul) 0%,var(--azul-c) 100%);color:#fff;padding:8px 6px;font-weight:700;text-align:center;font-size:10px;text-transform:uppercase}
+.att-table th:first-child{text-align:left;border-radius:8px 0 0 0}
+.att-table th:last-child{border-radius:0 8px 0 0}
+.att-table td{padding:7px 4px;border-bottom:1px solid var(--cinza-f);vertical-align:middle;text-align:center}
+.att-table td:first-child{text-align:left;font-weight:600;font-size:12px;padding-left:4px}
+.att-table tr:last-child td{border-bottom:none}
+.att-table tr:hover td{background:rgba(0,74,124,.03)}
+
+.att-btn{width:36px;height:32px;border:2px solid var(--cinza-m);border-radius:8px;background:var(--cinza-f);font-size:14px;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;justify-content:center;font-weight:800;color:var(--cinza-e)}
+.att-btn:active{transform:scale(.88)}
+.att-btn.P{background:rgba(0,107,63,.1);border-color:var(--verde);color:var(--verde)}
+.att-btn.A{background:rgba(208,2,27,.08);border-color:var(--vermelho);color:var(--vermelho)}
+.attendance-mode{display:flex;gap:6px;padding:4px;background:var(--cinza-f);border-radius:10px;margin-bottom:12px}.attendance-mode button{flex:1;border:0;border-radius:7px;background:transparent;padding:8px;font-family:var(--font);font-size:11px;font-weight:700;color:var(--cinza-e);cursor:pointer}.attendance-mode button.active{background:#fff;color:var(--azul);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.week-table{width:100%;border-collapse:separate;border-spacing:3px;font-size:10px;table-layout:fixed}.week-table th{color:var(--cinza-e);font-size:9px;padding:3px 1px;text-align:center;text-transform:uppercase}.week-table th:first-child{width:76px;text-align:left}.week-table td{text-align:center;padding:2px 0}.week-table td:first-child{text-align:left}.week-resident{font-size:10px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.week-resident-action{border:0;background:transparent;color:var(--azul);font-family:var(--font);font-size:8px;font-weight:700;cursor:pointer;padding:3px 0}.week-att-btn{width:100%;min-width:34px;height:38px;border:1.5px solid var(--cinza-m);border-radius:8px;background:var(--cinza-f);font-size:14px;font-weight:800;color:var(--cinza-e);cursor:pointer}.week-att-btn.P{background:rgba(0,107,63,.1);border-color:var(--verde);color:var(--verde)}.week-att-btn.A{background:rgba(208,2,27,.08);border-color:var(--vermelho);color:var(--vermelho)}.week-att-btn.M{background:rgba(0,114,188,.08);border-color:var(--azul-c);color:var(--azul-c)}.week-att-btn.out{opacity:.35;cursor:not-allowed}.week-day-num{display:block;font-size:8px;margin-top:1px}.weekly-actions{display:flex;gap:8px;margin-top:10px}.weekly-actions .btn{flex:1;padding:10px 6px;font-size:11px}
+
+/* ===== INTERN CARDS ===== */
+.intern-card{background:#fff;border-radius:var(--rs);padding:13px 14px;margin-bottom:8px;box-shadow:0 2px 8px rgba(0,0,0,.06);display:flex;align-items:center;gap:12px;cursor:pointer;transition:box-shadow .2s,transform .15s;border-left:4px solid var(--cinza-m)}
+.intern-card:active{transform:scale(.98)}
+.intern-card.ok{border-left-color:var(--verde)}
+.intern-card.medio{border-left-color:var(--amarelo)}
+.intern-card.baixo{border-left-color:var(--vermelho)}
+.intern-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--azul) 0%,var(--azul-c) 100%);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0}
+.intern-info{flex:1;min-width:0}
+.intern-name{font-size:13px;font-weight:700;color:var(--texto);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.intern-sub{font-size:11px;color:var(--cinza-e);margin-top:2px}
+.intern-arrow{font-size:16px;color:var(--cinza-e)}
+
+/* STATS MINI */
+.mini-stats{display:flex;gap:6px;margin-top:4px}
+.mini-stat{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:var(--cinza-f);color:var(--cinza-e)}
+.mini-stat.verde{background:rgba(0,107,63,.1);color:var(--verde)}
+.mini-stat.amarelo{background:rgba(245,166,35,.12);color:#7A4A00}
+.mini-stat.vermelho{background:rgba(208,2,27,.1);color:var(--vermelho)}
+
+/* PROG BAR */
+.pb-wrap{margin:6px 0 4px}
+.pb-label{display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px}
+.pb-label span:first-child{font-weight:600}
+.pb-label span:last-child{font-weight:700}
+.pb-bg{height:8px;background:var(--cinza-m);border-radius:4px;overflow:hidden}
+.pb{height:100%;border-radius:4px;transition:width .8s cubic-bezier(.34,1.56,.64,1)}
+.pb.verde{background:linear-gradient(90deg,var(--verde) 0%,var(--verde-c) 100%)}
+.pb.azul{background:linear-gradient(90deg,var(--azul) 0%,var(--azul-c) 100%)}
+.pb.amarelo{background:linear-gradient(90deg,#7A4A00 0%,var(--amarelo) 100%)}
+.pb.vermelho{background:linear-gradient(90deg,var(--vermelho) 0%,#FF4D63 100%)}
+
+/* FREQ STATS GRID */
+.fsg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.fs{background:var(--cinza-f);border-radius:var(--rs);padding:12px 8px;text-align:center;border:1.5px solid var(--cinza-m)}
+.fs .fv{font-size:20px;font-weight:800;line-height:1;color:var(--cinza-e)}
+.fs .fl{font-size:9px;font-weight:600;color:var(--cinza-e);margin-top:3px;text-transform:uppercase}
+.fs.azul{background:rgba(0,114,188,.06);border-color:rgba(0,114,188,.2)}.fs.azul .fv{color:var(--azul-c)}
+.fs.verde{background:rgba(0,107,63,.06);border-color:rgba(0,107,63,.2)}.fs.verde .fv{color:var(--verde)}
+.fs.amarelo{background:rgba(245,166,35,.1);border-color:rgba(245,166,35,.3)}.fs.amarelo .fv{color:#7A4A00}
+.fs.vermelho{background:rgba(208,2,27,.06);border-color:rgba(208,2,27,.2)}.fs.vermelho .fv{color:var(--vermelho)}
+
+/* CAL TABLE */
+.cal-table{width:100%;border-collapse:collapse;font-size:11px}
+.cal-table th{background:linear-gradient(135deg,var(--azul) 0%,var(--azul-c) 100%);color:#fff;padding:9px 6px;font-weight:700;text-align:center;font-size:10px;text-transform:uppercase}
+.cal-table th:first-child{text-align:left}
+.cal-table td{padding:6px 4px;border-bottom:1px solid var(--cinza-f);vertical-align:middle;text-align:center}
+.cal-table td:first-child{text-align:left;font-weight:600;padding-left:4px;white-space:nowrap}
+.cal-table tr:last-child td{border-bottom:none}
+
+/* COMPETÊNCIAS */
+.dom-block{margin-bottom:10px;border-radius:var(--rs);border:1.5px solid var(--cinza-m);overflow:hidden}
+.dom-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;cursor:pointer;user-select:none;background:var(--cinza-f);transition:background .2s}
+.dom-hdr:active{background:var(--cinza-m)}
+.dom-hdr-l{display:flex;align-items:center;gap:8px}
+.dom-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;color:#fff}
+.dom-name{font-size:12px;font-weight:700;color:var(--texto);line-height:1.3}
+.dom-avg{font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;background:#fff;color:var(--cinza-e);border:1px solid var(--cinza-m);white-space:nowrap}
+.dom-tog{font-size:13px;color:var(--cinza-e);transition:transform .2s;flex-shrink:0}
+.dom-block.open .dom-tog{transform:rotate(180deg)}
+.dom-body{display:none;padding:10px 14px 14px}
+.dom-block.open .dom-body{display:block}
+
+.comp-item{padding:10px 0;border-bottom:1px solid var(--cinza-f)}
+.comp-item:last-child{border-bottom:none;padding-bottom:0}
+.comp-code{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.comp-txt{font-size:12px;color:var(--texto);line-height:1.4;margin-bottom:8px}
+.rating-row{display:flex;gap:4px;align-items:center}
+.rb{flex:1;padding:7px 2px;border:2px solid var(--cinza-m);border-radius:7px;background:#fff;font-family:var(--font);font-size:11px;font-weight:800;color:var(--cinza-e);cursor:pointer;text-align:center;transition:all .18s;line-height:1.2}
+.rb:active{transform:scale(.92)}
+.rb.s1{border-color:var(--vermelho);background:rgba(208,2,27,.08);color:var(--vermelho)}
+.rb.s2{border-color:var(--amarelo);background:rgba(245,166,35,.1);color:#7A4A00}
+.rb.s3{border-color:var(--azul-c);background:rgba(0,114,188,.08);color:var(--azul-c)}
+.rb.s4{border-color:var(--verde);background:rgba(0,107,63,.08);color:var(--verde)}
+.nob{padding:7px 7px;border:2px solid var(--cinza-m);border-radius:7px;background:#fff;font-family:var(--font);font-size:10px;font-weight:700;color:var(--cinza-e);cursor:pointer;transition:all .18s;white-space:nowrap;flex-shrink:0}
+.nob.sel{border-color:var(--cinza-e);background:var(--cinza-f);color:var(--texto)}
+.rating-labels{display:flex;justify-content:space-between;font-size:8px;color:var(--cinza-e);margin-top:3px;padding:0 2px}
+
+/* CONCEITO */
+.conc-sel{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}
+.conc-btn{padding:10px 4px;border:2px solid var(--cinza-m);border-radius:8px;background:#fff;font-family:var(--font);font-size:12px;font-weight:800;color:var(--cinza-e);cursor:pointer;text-align:center;transition:all .2s;line-height:1.3}
+.conc-btn:active{transform:scale(.95)}
+.conc-btn.sI{border-color:var(--vermelho);background:rgba(208,2,27,.08);color:var(--vermelho)}
+.conc-btn.sR{border-color:var(--amarelo);background:rgba(245,166,35,.1);color:#7A4A00}
+.conc-btn.sB{border-color:var(--azul-c);background:rgba(0,114,188,.08);color:var(--azul-c)}
+.conc-btn.sMB{border-color:var(--verde-c);background:rgba(0,107,63,.06);color:var(--verde)}
+.conc-btn.sE{border-color:var(--verde);background:rgba(0,107,63,.1);color:var(--verde)}
+
+/* RELATÓRIO */
+.rel-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.rel-who{font-size:9px;font-weight:800;width:30px;flex-shrink:0;text-transform:uppercase}
+.rel-bg{flex:1;height:10px;background:var(--cinza-m);border-radius:5px;overflow:hidden}
+.rel-bar{height:100%;border-radius:5px;transition:width .8s}
+.rel-bar.auto{background:linear-gradient(90deg,var(--azul) 0%,var(--azul-c) 100%)}
+.rel-bar.prec{background:linear-gradient(90deg,var(--verde) 0%,var(--verde-c) 100%)}
+.rel-val{font-size:11px;font-weight:700;width:26px;text-align:right;flex-shrink:0}
+
+/* INSTALL/UPDATE */
+#install-banner{position:fixed;bottom:0;left:0;right:0;z-index:8500;background:#fff;border-top:1px solid var(--cinza-m);padding:14px 16px;display:none;align-items:center;gap:12px;max-width:480px;margin:0 auto;box-shadow:0 -4px 20px rgba(0,0,0,.1)}
+#update-banner{position:fixed;top:0;left:0;right:0;z-index:8500;background:var(--azul);padding:12px 16px;display:none;align-items:center;gap:10px;max-width:480px;margin:0 auto}
+
+@media print{
+  #app-header,#install-banner,#update-banner,.btn,.modal-ov,#splash{display:none!important}
+  .screen{display:none!important}
+  #screen-intern{display:block!important}
+  #intern-screen-rel{display:block!important}
+  .intern-sub-screen{display:none!important}
+  #intern-screen-rel.intern-sub-active{display:block!important}
+  body{max-width:100%}
+}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+    <div class="splash-icon">🩺</div>
+    <h1>InternoPed UEA</h1>
+    <p>Avaliação do Interno em Pediatria</p>
+  </div>
+  <div class="uea-tag">Universidade do Estado do Amazonas</div>
+</div>
+
+<!-- HEADER -->
+<div id="app-header">
+  <div class="header-top">
+    <div class="header-brand">
+      <div class="header-icon" id="hdr-back-btn" onclick="goHome()" style="display:none">←</div>
+      <div class="header-icon" id="hdr-logo" style="font-size:18px">🩺</div>
+      <div>
+        <h1 id="hdr-title">InternoPed UEA</h1>
+        <p id="hdr-sub">Internato em Pediatria · SBP NT 134/2024</p>
+      </div>
+    </div>
+    <button class="hbtn" id="btn-sync" onclick="syncData()">↑ Sync</button>
+  </div>
+  <div class="tab-bar" id="main-tabs">
+    <button class="tab-btn active" onclick="showMainScreen('home',this)"><span class="ti">🏠</span>Início</button>
+    <button class="tab-btn" onclick="showMainScreen('turma',this)"><span class="ti">👥</span>Turma</button>
+    <button class="tab-btn" onclick="showMainScreen('config',this)"><span class="ti">⚙️</span>Config</button>
+  </div>
+  <div class="tab-bar" id="intern-tabs" style="display:none">
+    <button class="tab-btn active" onclick="showInternTab('freq',this)"><span class="ti">📅</span>Frequência</button>
+    <button class="tab-btn" onclick="showInternTab('auto',this)"><span class="ti">🔍</span>Autoaval.</button>
+    <button class="tab-btn" onclick="showInternTab('prec',this)"><span class="ti">👨‍⚕️</span>Preceptor</button>
+    <button class="tab-btn" onclick="showInternTab('rel',this)"><span class="ti">📊</span>Relatório</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TELA: INÍCIO (frequência diária) -->
+<!-- ============================================================ -->
+<div id="screen-home" class="screen active">
+  <div class="sec-hdr azul">
+    <h2>📅 Frequência</h2>
+    <p id="home-sub">Marque a presença dos internos</p>
+  </div>
+
+  <div class="card">
+    <div class="attendance-mode"><button id="intern-mode-week" class="active" onclick="setAttendanceMode('week')">Semana</button><button id="intern-mode-day" onclick="setAttendanceMode('day')">Dia / turnos</button></div>
+    <div id="intern-weekly-attendance">
+      <div class="day-header"><div class="day-date" id="intern-week-label">–</div><div class="day-nav"><button class="day-nav-btn" onclick="changeWeek(-1)">‹</button><button class="day-nav-btn" onclick="changeWeek(0)" style="font-size:11px;font-weight:700">Atual</button><button class="day-nav-btn" onclick="changeWeek(1)">›</button></div></div>
+      <div style="overflow-x:auto"><table class="week-table"><thead id="intern-week-head"></thead><tbody id="intern-week-body"></tbody></table></div>
+      <div class="weekly-actions"><button class="btn btn-verde btn-sm" onclick="markAllWeek('P')">✓ Todos presentes</button><button class="btn btn-secondary btn-sm" onclick="markAllWeek(null)">○ Limpar semana</button></div>
+      <div style="margin-top:8px;font-size:9px;color:var(--cinza-e);line-height:1.5">Toque em um dia para alternar entre presente, falta e sem registro. Use <strong>Dia / turnos</strong> para ajustar apenas manhã ou tarde.</div>
+    </div>
+    <div id="intern-daily-attendance" style="display:none">
+    <div class="day-header">
+      <div class="day-date" id="day-label">–</div>
+      <div class="day-nav">
+        <button class="day-nav-btn" onclick="changeDay(-1)">‹</button>
+        <button class="day-nav-btn" onclick="changeDay(0)" style="font-size:11px;font-weight:700">Hoje</button>
+        <button class="day-nav-btn" onclick="changeDay(1)">›</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="att-table">
+        <thead>
+          <tr>
+            <th>Interno</th>
+            <th id="col-manha-hdr">🌅 Manhã</th>
+            <th id="col-tarde-hdr">🌆 Tarde</th>
+          </tr>
+        </thead>
+        <tbody id="daily-att-body"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button class="btn btn-verde btn-sm" onclick="markAllDay('P')" style="flex:1;padding:10px">✓ Todos Presentes</button>
+      <button class="btn btn-secondary btn-sm" onclick="markAllDay(null)" style="flex:1;padding:10px">○ Limpar Dia</button>
+    </div>
+    </div>
+  </div>
+
+  <div class="card" id="home-overview-card">
+    <div class="card-title">📊 Visão Geral da Turma</div>
+    <div id="home-overview"></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TELA: TURMA -->
+<!-- ============================================================ -->
+<div id="screen-turma" class="screen">
+  <div class="sec-hdr azul">
+    <h2>👥 Turma Atual</h2>
+    <p id="turma-sub">Submódulo em curso</p>
+  </div>
+
+  <div class="card">
+    <button class="btn btn-primary" onclick="abrirModalAddInterno()">+ Adicionar Interno</button>
+  </div>
+
+  <div class="card" style="padding-top:12px;padding-bottom:8px">
+    <div id="intern-list">
+      <div class="empty"><div class="ei">👥</div><p>Nenhum interno cadastrado.<br>Toque em "Adicionar Interno".</p></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" style="color:var(--vermelho)">⚠️ Nova Turma</div>
+    <div class="alert aviso"><span>⚠️</span><div>Ao iniciar nova turma, os dados dos internos atuais são removidos. Imprima os relatórios antes.</div></div>
+    <button class="btn btn-danger" onclick="novaTurma()">🔄 Iniciar Nova Turma</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TELA: CONFIG -->
+<!-- ============================================================ -->
+<div id="screen-config" class="screen">
+  <div class="sec-hdr escuro">
+    <h2>⚙️ Configuração do Programa</h2>
+    <p>Dados compartilhados para toda a turma</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 Identificação</div>
+    <div class="fg">
+      <label>Preceptor Responsável</label>
+      <input type="text" id="cfg-preceptor" placeholder="Nome do preceptor" oninput="saveProgram()">
+    </div>
+    <div class="fg">
+      <label>Submódulo Atual</label>
+      <select id="cfg-submod" onchange="saveProgram()">
+        <option value="1">Submódulo 1 (4 semanas)</option>
+        <option value="2">Submódulo 2 (3 semanas)</option>
+        <option value="3">Submódulo 3 (3 semanas)</option>
+      </select>
+    </div>
+    <div class="fr">
+      <div class="fg">
+        <label>Início</label>
+        <input type="date" id="cfg-inicio" onchange="saveProgram(); recalcFim()">
+      </div>
+      <div class="fg">
+        <label>Término</label>
+        <input type="date" id="cfg-fim" onchange="saveProgram()">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🌅 Cenários</div>
+    <div class="alert info"><span>ℹ️</span><div>Os cenários são iguais para todos os 12 internos do submódulo.</div></div>
+    <div class="fr">
+      <div class="fg">
+        <label>🌅 Cenário Manhã</label>
+        <input type="text" id="cfg-manha" placeholder="Ex: Ambulatório" oninput="saveProgram(); refreshHeaders()">
+      </div>
+      <div class="fg">
+        <label>🌆 Cenário Tarde</label>
+        <input type="text" id="cfg-tarde" placeholder="Ex: Enfermaria" oninput="saveProgram(); refreshHeaders()">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="showToast('✓ Configuração salva!','s')">✓ Confirmar</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">☁️ Sincronização</div>
+    <button class="btn btn-secondary" onclick="abrirModalSync()">⚙️ Configurar Google Sheets</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TELA: PERFIL DO INTERNO -->
+<!-- ============================================================ -->
+<div id="screen-intern" class="screen">
+
+  <!-- SUB-ABA: FREQUÊNCIA INDIVIDUAL -->
+  <div id="intern-screen-freq" class="intern-sub-screen intern-sub-active">
+    <div class="sec-hdr azul">
+      <h2>📅 Frequência Individual</h2>
+      <p id="intern-freq-sub">Histórico completo do período</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📊 Frequência</div>
+      <div class="fsg" style="margin-bottom:10px">
+        <div class="fs azul"><div class="fv" id="if-manha">–</div><div class="fl" id="if-manha-l">Manhã</div></div>
+        <div class="fs verde"><div class="fv" id="if-tarde">–</div><div class="fl" id="if-tarde-l">Tarde</div></div>
+        <div class="fs" id="if-global-card"><div class="fv" id="if-global">–</div><div class="fl">Global</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📆 Calendário</div>
+      <div id="intern-cal-container"><div class="empty"><div class="ei">📅</div><p>Configure as datas do submódulo.</p></div></div>
+    </div>
+  </div>
+
+  <!-- SUB-ABA: AUTOAVALIAÇÃO -->
+  <div id="intern-screen-auto" class="intern-sub-screen" style="display:none">
+    <div class="sec-hdr roxo">
+      <h2>🔍 Autoavaliação</h2>
+      <p>45 competências SBP NT 134/2024</p>
+    </div>
+    <div class="card">
+      <div class="alert info"><span>ℹ️</span><div><strong>Escala:</strong> 1=Não atingi · 2=Parcialmente · 3=Em desenvolvimento · 4=Atingi plenamente · N/O=Não observado</div></div>
+    </div>
+    <div style="padding:0 12px" id="auto-domains-container"></div>
+    <div class="card">
+      <div class="fg">
+        <label>Reflexão do Interno</label>
+        <textarea id="auto-comments" placeholder="Aprendizados, dificuldades e metas..." style="height:100px" oninput="saveSelfComment()"></textarea>
+      </div>
+      <button class="btn btn-roxo" onclick="confirmAutoaval()">✓ Confirmar Autoavaliação</button>
+    </div>
+  </div>
+
+  <!-- SUB-ABA: PRECEPTOR -->
+  <div id="intern-screen-prec" class="intern-sub-screen" style="display:none">
+    <div class="sec-hdr verde">
+      <h2>👨‍⚕️ Avaliação do Preceptor</h2>
+      <p>45 competências · visão do preceptor</p>
+    </div>
+    <div class="card">
+      <div class="alert verde"><span>📋</span><div>Use N/O quando a competência não foi observável no cenário.</div></div>
+    </div>
+    <div style="padding:0 12px" id="prec-domains-container"></div>
+    <div class="card">
+      <div class="fg">
+        <label>Feedback Qualitativo</label>
+        <textarea id="prec-comments" placeholder="Pontos fortes, áreas de melhoria..." style="height:100px" oninput="savePrecComment()"></textarea>
+      </div>
+      <div class="fg">
+        <label>Conceito Global</label>
+        <div class="conc-sel">
+          <button class="conc-btn" id="conc-I" onclick="setConceito('I',this)">I<br><span style="font-size:8px">Insatisf.</span></button>
+          <button class="conc-btn" id="conc-R" onclick="setConceito('R',this)">R<br><span style="font-size:8px">Regular</span></button>
+          <button class="conc-btn" id="conc-B" onclick="setConceito('B',this)">B<br><span style="font-size:8px">Bom</span></button>
+          <button class="conc-btn" id="conc-MB" onclick="setConceito('MB',this)">MB<br><span style="font-size:8px">M. Bom</span></button>
+          <button class="conc-btn" id="conc-E" onclick="setConceito('E',this)">E<br><span style="font-size:8px">Excelente</span></button>
+        </div>
+      </div>
+      <button class="btn btn-verde" onclick="confirmPreceptor()">✓ Confirmar Avaliação</button>
+    </div>
+  </div>
+
+  <!-- SUB-ABA: RELATÓRIO -->
+  <div id="intern-screen-rel" class="intern-sub-screen" style="display:none">
+    <div class="sec-hdr escuro">
+      <h2>📊 Relatório Individual</h2>
+      <p id="intern-rel-name">–</p>
+    </div>
+    <div class="card" id="rel-content"></div>
+    <div class="card">
+      <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimir / PDF</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL: ADD INTERNO -->
+<div class="modal-ov" id="modal-add">
+  <div class="modal-box">
+    <div class="modal-handle"></div>
+    <div class="modal-title">+ Adicionar Interno</div>
+    <div class="fg">
+      <label>Nome Completo</label>
+      <input type="text" id="add-nome" placeholder="Nome do interno">
+    </div>
+    <button class="btn btn-primary" onclick="adicionarInterno()">✓ Adicionar</button>
+    <button class="btn btn-secondary" onclick="fecharModal('modal-add')" style="margin-top:8px">Cancelar</button>
+  </div>
+</div>
+
+<!-- MODAL: SYNC -->
+<div class="modal-ov" id="modal-sync">
+  <div class="modal-box">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚙️ Google Sheets</div>
+    <div style="font-size:12px;color:var(--cinza-e);margin-bottom:14px;line-height:1.6">Cole a URL do Web App do Google Apps Script.</div>
+    <div class="fg">
+      <label>URL do Web App</label>
+      <input type="text" id="input-sync-url" placeholder="https://script.google.com/macros/s/...">
+    </div>
+    <button class="btn btn-primary" onclick="salvarSync()">✓ Salvar e Testar</button>
+    <button class="btn btn-secondary" onclick="fecharModal('modal-sync')" style="margin-top:8px">Cancelar</button>
+  </div>
+</div>
+
+<!-- INSTALL/UPDATE BANNERS -->
+<div id="install-banner">
+  <div style="flex:1"><div style="font-size:13px;font-weight:700">📱 Instalar InternoPed UEA</div><div style="font-size:11px;color:var(--cinza-e);margin-top:2px">Acesso offline, tela inicial</div></div>
+  <button onclick="document.getElementById('install-banner').style.display='none'" style="background:none;border:none;font-size:18px;color:var(--cinza-e);cursor:pointer">✕</button>
+  <button onclick="installApp()" style="background:var(--azul);color:#fff;border:none;border-radius:8px;padding:10px 16px;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer">Instalar</button>
+</div>
+<div id="update-banner">
+  <div style="flex:1;font-size:12px;font-weight:600;color:#fff">🔄 Nova versão disponível</div>
+  <button onclick="applyUpdate()" style="background:#fff;color:var(--azul);border:none;border-radius:6px;padding:7px 12px;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer">Atualizar</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// DOMAINS — SBP NT 134/2024
+// ============================================================
+const DOMAINS=[
+  {id:1,name:'Cuidado com o Paciente',color:'#0072BC',items:[
+    {id:'1.1',txt:'Coleta anamnese pediátrica completa, incluindo história familiar e antecedentes perinatais'},
+    {id:'1.2',txt:'Realiza exame físico completo adaptado à faixa etária, com medidas antropométricas e avaliação do desenvolvimento'},
+    {id:'1.3',txt:'Identifica sinais de alarme e situações de urgência em crianças e adolescentes'},
+    {id:'1.4',txt:'Formula hipóteses diagnósticas e estabelece diagnóstico diferencial em condições pediátricas frequentes'},
+    {id:'1.5',txt:'Solicita e interpreta exames complementares de forma racional e custo-efetiva'},
+    {id:'1.6',txt:'Elabora plano terapêutico considerando aspectos clínicos, sociais e familiares'},
+    {id:'1.7',txt:'Realiza procedimentos básicos com segurança (venopunção, sondagem, curativos, oxigenoterapia)'},
+    {id:'1.8',txt:'Acompanha crescimento e desenvolvimento infantil utilizando curvas e marcos de referência'},
+    {id:'1.9',txt:'Orienta aleitamento materno e alimentação complementar'},
+    {id:'1.10',txt:'Aplica e orienta sobre imunização conforme Calendário Nacional de Vacinação'},
+    {id:'1.11',txt:'Identifica e maneja situações de violência, maus-tratos e vulnerabilidade social'},
+    {id:'1.12',txt:'Reconhece condições de risco ambiental e sociocultural que afetam a saúde da criança'},
+    {id:'1.13',txt:'Realiza atendimento ao recém-nascido na sala de parto e em alojamento conjunto'},
+    {id:'1.14',txt:'Identifica e encaminha adequadamente condições que exigem atenção especializada'},
+    {id:'1.15',txt:'Promove saúde e prevenção de acidentes na infância e adolescência'}
+  ]},
+  {id:2,name:'Conhecimento Médico',color:'#6B2FA0',items:[
+    {id:'2.1',txt:'Demonstra conhecimento das bases fisiopatológicas das doenças prevalentes na infância'},
+    {id:'2.2',txt:'Integra ciências básicas e clínicas no raciocínio diagnóstico e terapêutico'},
+    {id:'2.3',txt:'Conhece e aplica conceitos de farmacocinética e farmacodinâmica relevantes à pediatria'},
+    {id:'2.4',txt:'Domina conteúdo das especialidades pediátricas fundamentais (neonatologia, pneumo, gastro, neuro, cardio, infectologia)'},
+    {id:'2.5',txt:'Aplica conhecimentos de epidemiologia e saúde coletiva ao cuidado pediátrico'},
+    {id:'2.6',txt:'Conhece as políticas públicas de saúde voltadas à criança e ao adolescente'},
+    {id:'2.7',txt:'Demonstra conhecimento sobre medicina baseada em evidências e sua aplicação clínica'},
+    {id:'2.8',txt:'Reconhece aspectos psicológicos e psiquiátricos do desenvolvimento infantil'},
+    {id:'2.9',txt:'Conhece os marcos legais e éticos que regem a prática pediátrica (ECA, direitos da criança)'},
+    {id:'2.10',txt:'Mantém atualização contínua por meio de literatura científica e diretrizes clínicas'}
+  ]},
+  {id:3,name:'Habilidade de Comunicação Interpessoal',color:'#00B4C8',items:[
+    {id:'3.1',txt:'Estabelece comunicação empática, clara e adaptada à faixa etária da criança e ao nível de compreensão dos familiares'},
+    {id:'3.2',txt:'Comunica diagnósticos, prognósticos e planos terapêuticos de forma compreensível e respeitosa'},
+    {id:'3.3',txt:'Realiza registros clínicos (prontuário, evolução, prescrição) de forma clara, completa e ética'},
+    {id:'3.4',txt:'Trabalha colaborativamente com a equipe multiprofissional, comunicando-se de forma construtiva e respeitosa'}
+  ]},
+  {id:4,name:'Profissionalismo',color:'#F5A623',items:[
+    {id:'4.1',txt:'Demonstra comprometimento, pontualidade e assiduidade nas atividades do internato'},
+    {id:'4.2',txt:'Age com integridade, honestidade e transparência nas relações com pacientes, familiares e equipe'},
+    {id:'4.3',txt:'Respeita a autonomia do paciente e dos familiares nas decisões de saúde'},
+    {id:'4.4',txt:'Demonstra sensibilidade cultural e respeito à diversidade dos pacientes atendidos'},
+    {id:'4.5',txt:'Reconhece os limites do seu conhecimento e busca ajuda quando necessário'},
+    {id:'4.6',txt:'Mantém conduta ética e confidencialidade das informações dos pacientes'},
+    {id:'4.7',txt:'Cuida do próprio bem-estar e reconhece sinais de esgotamento (burnout)'},
+    {id:'4.8',txt:'Assume responsabilidade pelos erros e busca aprimoramento contínuo'},
+    {id:'4.9',txt:'Veste-se e porta-se de maneira adequada ao ambiente hospitalar e ambulatorial'}
+  ]},
+  {id:5,name:'Aprendizagem Baseada na Prática e Melhoria Constante',color:'#006B3F',items:[
+    {id:'5.1',txt:'Identifica lacunas no próprio conhecimento e elabora estratégias para superá-las'},
+    {id:'5.2',txt:'Utiliza evidências científicas para embasar decisões clínicas e questionar práticas estabelecidas'},
+    {id:'5.3',txt:'Reflete criticamente sobre o próprio desempenho e incorpora feedbacks para melhoria'}
+  ]},
+  {id:6,name:'Prática Baseada no Sistema de Saúde',color:'#004A7C',items:[
+    {id:'6.1',txt:'Compreende a organização e os fluxos do SUS e do sistema de saúde suplementar aplicados à pediatria'},
+    {id:'6.2',txt:'Utiliza recursos de saúde de forma racional, considerando custo-benefício e equidade'},
+    {id:'6.3',txt:'Participa de iniciativas de melhoria da qualidade e segurança do paciente pediátrico'},
+    {id:'6.4',txt:'Articula ações intersetoriais e de saúde coletiva para promoção da saúde infantil'}
+  ]}
+];
+
+// ============================================================
+// STATE
+// ============================================================
+const KEY='internoped_v3';
+let APP={
+  program:{submodulo:'1',preceptorName:'',startDate:'',endDate:'',morningName:'',afternoonName:''},
+  interns:{}
+};
+let currentInternId=null;
+let currentDay=null; // 'YYYY-MM-DD'
+let attendanceMode='week';
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(APP));}catch(e){}}
+function loadApp(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d)APP=d;}catch(e){}}
+
+function intern(id){return APP.interns[id]||null}
+function curIntern(){return intern(currentInternId)}
+
+// ============================================================
+// NAV
+// ============================================================
+function showMainScreen(name,btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.querySelectorAll('#main-tabs .tab-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.getElementById('main-tabs').style.display='flex';
+  document.getElementById('intern-tabs').style.display='none';
+  document.getElementById('hdr-back-btn').style.display='none';
+  document.getElementById('hdr-logo').style.display='flex';
+  document.getElementById('hdr-title').textContent='InternoPed UEA';
+  document.getElementById('hdr-sub').textContent='Internato em Pediatria · SBP NT 134/2024';
+  if(name==='home') renderHome();
+  if(name==='turma') renderTurma();
+  if(name==='config') restoreConfig();
+}
+
+function openIntern(id){
+  currentInternId=id;
+  const it=intern(id);
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-intern').classList.add('active');
+  document.getElementById('main-tabs').style.display='none';
+  document.getElementById('intern-tabs').style.display='flex';
+  document.getElementById('hdr-back-btn').style.display='flex';
+  document.getElementById('hdr-logo').style.display='none';
+  document.getElementById('hdr-title').textContent=it.name;
+  const sub=APP.program.submodulo;
+  document.getElementById('hdr-sub').textContent='Submódulo '+sub+' · '+APP.program.morningName+'/'+APP.program.afternoonName;
+  // activate first intern tab
+  document.querySelectorAll('#intern-tabs .tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('#intern-tabs .tab-btn').classList.add('active');
+  showInternTab('freq');
+}
+
+function showInternTab(tab,btn){
+  document.querySelectorAll('.intern-sub-screen').forEach(s=>{s.style.display='none';s.classList.remove('intern-sub-active');});
+  const el=document.getElementById('intern-screen-'+tab);
+  el.style.display='block'; el.classList.add('intern-sub-active');
+  if(btn){document.querySelectorAll('#intern-tabs .tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+  if(tab==='freq') buildInternCal();
+  if(tab==='auto') buildDomains('auto');
+  if(tab==='prec') buildDomains('prec');
+  if(tab==='rel') buildReport();
+}
+
+function goHome(){
+  showMainScreen('home',document.querySelector('#main-tabs .tab-btn'));
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg,tipo='s'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+tipo+' show';
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ============================================================
+// DATE UTILS
+// ============================================================
+const WD=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const MO=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+function isoToday(){return new Date().toISOString().split('T')[0]}
+function fmtDate(d){const dt=new Date(d+'T12:00:00');return WD[dt.getDay()]+' '+dt.getDate()+' '+MO[dt.getMonth()]}
+function fmtBR(d){return d?d.split('-').reverse().join('/'):'–'}
+function getWeekdays(s,e){
+  const days=[],sd=new Date(s+'T12:00:00'),ed=new Date(e+'T12:00:00'),cur=new Date(sd);
+  while(cur<=ed){const d=cur.getDay();if(d!==0&&d!==6)days.push(cur.toISOString().split('T')[0]);cur.setDate(cur.getDate()+1);}
+  return days;
+}
+function addDays(d,n){const dt=new Date(d+'T12:00:00');dt.setDate(dt.getDate()+n);return dt.toISOString().split('T')[0]}
+function addWeeks(d,n){return addDays(d,n*7)}
+
+// ============================================================
+// HOME SCREEN
+// ============================================================
+function renderHome(){
+  if(!currentDay) currentDay=isoToday();
+  refreshHeaders();
+  renderDailyAtt();
+  renderWeekAttendance();
+  renderHomeOverview();
+}
+
+function setAttendanceMode(mode){attendanceMode=mode;document.getElementById('intern-weekly-attendance').style.display=mode==='week'?'block':'none';document.getElementById('intern-daily-attendance').style.display=mode==='day'?'block':'none';document.getElementById('intern-mode-week').classList.toggle('active',mode==='week');document.getElementById('intern-mode-day').classList.toggle('active',mode==='day');if(mode==='week')renderWeekAttendance();else renderDailyAtt()}
+function startOfWeek(date){const dt=new Date(date+'T12:00:00'),offset=dt.getDay()===0?-6:1-dt.getDay();dt.setDate(dt.getDate()+offset);return dt.toISOString().split('T')[0]}
+function currentWeekDays(){const monday=startOfWeek(currentDay||isoToday());return[0,1,2,3,4].map(n=>addDays(monday,n))}
+function changeWeek(dir){currentDay=dir===0?isoToday():addDays(startOfWeek(currentDay),dir*7);renderHome()}
+function isProgramDay(day){const p=APP.program||{};return(!p.startDate||day>=p.startDate)&&(!p.endDate||day<=p.endDate)}
+function combinedAttendance(att){const m=att&&att.morning,a=att&&att.afternoon;if(!m&&!a)return{value:'',text:'○'};if(m===a)return{value:m||'',text:m==='P'?'✓':'✕'};return{value:'M',text:'◐'}}
+function renderWeekAttendance(){const days=currentWeekDays(),first=new Date(days[0]+'T12:00:00'),last=new Date(days[4]+'T12:00:00'),label=document.getElementById('intern-week-label');if(label)label.textContent=`${first.getDate()}/${first.getMonth()+1} a ${last.getDate()}/${last.getMonth()+1}`;const head=document.getElementById('intern-week-head');if(head)head.innerHTML='<tr><th>Interno</th>'+days.map((d,i)=>`<th>${['Seg','Ter','Qua','Qui','Sex'][i]}<span class="week-day-num">${d.slice(8,10)}/${d.slice(5,7)}</span></th>`).join('')+'</tr>';const body=document.getElementById('intern-week-body');if(!body)return;const ids=Object.keys(APP.interns);if(!ids.length){body.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--cinza-e)">Nenhum interno cadastrado</td></tr>';return}body.innerHTML=ids.map(id=>{const it=APP.interns[id],cells=days.map(d=>{const ok=isProgramDay(d),state=combinedAttendance(it.attendance[d]||{});return`<td><button class="week-att-btn ${state.value} ${ok?'':'out'}" ${ok?`onclick="cycleWeekDay('${id}','${d}')"`:'disabled'}>${state.text}</button></td>`}).join('');return`<tr><td><div class="week-resident" title="${it.name}">${it.name.split(' ')[0]}</div><button class="week-resident-action" onclick="markInternWeek('${id}','P')">✓ semana</button></td>${cells}</tr>`}).join('')}
+function cycleWeekDay(id,day){const it=APP.interns[id];if(!it)return;const state=combinedAttendance(it.attendance[day]||{}).value,next=state===''?'P':state==='P'?'A':null;it.attendance[day]={morning:next,afternoon:next};save();renderWeekAttendance();renderHomeOverview()}
+function markInternWeek(id,val){const it=APP.interns[id];if(!it)return;currentWeekDays().filter(isProgramDay).forEach(d=>{it.attendance[d]={morning:val,afternoon:val}});save();renderWeekAttendance();renderHomeOverview()}
+function markAllWeek(val){Object.keys(APP.interns).forEach(id=>currentWeekDays().filter(isProgramDay).forEach(d=>{APP.interns[id].attendance[d]={morning:val,afternoon:val}}));save();renderWeekAttendance();renderHomeOverview();showToast(val==='P'?'✓ Semana marcada como presente':'Semana limpa','s')}
+
+function refreshHeaders(){
+  const mn=APP.program.morningName||'Manhã';
+  const tn=APP.program.afternoonName||'Tarde';
+  const el=document.getElementById('home-sub');
+  if(el) el.textContent=(mn&&tn)?mn+' e '+tn:'Marque a presença dos internos';
+  const ch=document.getElementById('col-manha-hdr');
+  const ct=document.getElementById('col-tarde-hdr');
+  if(ch) ch.textContent='🌅 '+(mn||'Manhã');
+  if(ct) ct.textContent='🌆 '+(tn||'Tarde');
+}
+
+function changeDay(dir){
+  if(dir===0){currentDay=isoToday();}
+  else{currentDay=addDays(currentDay,dir);}
+  renderDailyAtt();
+}
+
+function renderDailyAtt(){
+  const dl=document.getElementById('day-label');
+  if(dl) dl.textContent=fmtDate(currentDay)+' '+['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'][new Date(currentDay+'T12:00:00').getDay()];
+  const body=document.getElementById('daily-att-body');
+  if(!body) return;
+  const ids=Object.keys(APP.interns);
+  if(!ids.length){
+    body.innerHTML='<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--cinza-e);font-size:12px">Nenhum interno cadastrado</td></tr>';
+    return;
+  }
+  body.innerHTML=ids.map(id=>{
+    const it=APP.interns[id];
+    const att=it.attendance[currentDay]||{};
+    const mV=att.morning,aV=att.afternoon;
+    const mT=mV==='P'?'✓':mV==='A'?'✗':'○';
+    const aT=aV==='P'?'✓':aV==='A'?'✗':'○';
+    const mC='att-btn '+(mV||'');
+    const aC='att-btn '+(aV||'');
+    const initials=it.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    return `<tr>
+      <td><span style="font-size:12px">${it.name.split(' ')[0]}</span></td>
+      <td><button id="dab-m-${id}" class="${mC}" onclick="cycleDayAtt('${id}','morning')">${mT}</button></td>
+      <td><button id="dab-a-${id}" class="${aC}" onclick="cycleDayAtt('${id}','afternoon')">${aT}</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function cycleDayAtt(id,period){
+  if(!APP.interns[id]) return;
+  if(!APP.interns[id].attendance[currentDay]) APP.interns[id].attendance[currentDay]={morning:null,afternoon:null};
+  const cur=APP.interns[id].attendance[currentDay][period];
+  APP.interns[id].attendance[currentDay][period]=cur===null?'P':cur==='P'?'A':null;
+  save();
+  const btn=document.getElementById('dab-'+(period==='morning'?'m':'a')+'-'+id);
+  if(btn){
+    const v=APP.interns[id].attendance[currentDay][period];
+    btn.textContent=v==='P'?'✓':v==='A'?'✗':'○';
+    btn.className='att-btn '+(v||'');
+  }
+}
+
+function markAllDay(val){
+  Object.keys(APP.interns).forEach(id=>{
+    if(!APP.interns[id].attendance[currentDay]) APP.interns[id].attendance[currentDay]={morning:null,afternoon:null};
+    APP.interns[id].attendance[currentDay].morning=val;
+    APP.interns[id].attendance[currentDay].afternoon=val;
+  });
+  save(); renderDailyAtt();
+}
+
+function renderHomeOverview(){
+  const container=document.getElementById('home-overview');
+  if(!container) return;
+  const ids=Object.keys(APP.interns);
+  if(!ids.length){container.innerHTML='<div class="empty"><div class="ei">📊</div><p>Adicione internos na aba Turma.</p></div>';return;}
+  const {startDate,endDate}=APP.program;
+  const days=(startDate&&endDate)?getWeekdays(startDate,endDate):[];
+  container.innerHTML=ids.map(id=>{
+    const it=APP.interns[id];
+    let mP=0,mR=0,aP=0,aR=0;
+    days.forEach(d=>{const att=it.attendance[d]||{};if(att.morning==='P'){mP++;mR++;}else if(att.morning==='A')mR++;if(att.afternoon==='P'){aP++;aR++;}else if(att.afternoon==='A')aR++;});
+    const gPct=(mR+aR)?Math.round((mP+aP)/(mR+aR)*100):null;
+    const cls=gPct===null?'':gPct>=75?'verde':gPct>=60?'amarelo':'vermelho';
+    const selfDone=Object.keys(it.selfEval||{}).length;
+    const precDone=Object.keys(it.precEval||{}).length;
+    const initials=it.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    return `<div class="intern-card ${cls}" onclick="openIntern('${id}')">
+      <div class="intern-avatar">${initials}</div>
+      <div class="intern-info">
+        <div class="intern-name">${it.name}</div>
+        <div class="mini-stats">
+          <span class="mini-stat ${cls}">${gPct!==null?gPct+'% freq':'sem reg.'}</span>
+          <span class="mini-stat ${selfDone>0?'azul':''}" style="${selfDone>0?'background:rgba(0,114,188,.1);color:var(--azul-c)':''}">Auto: ${selfDone}/45</span>
+          <span class="mini-stat ${precDone>0?'verde':''}">Prec: ${precDone}/45</span>
+        </div>
+      </div>
+      <div class="intern-arrow">›</div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// TURMA SCREEN
+// ============================================================
+function renderTurma(){
+  const {submodulo,startDate,endDate,morningName,afternoonName}=APP.program;
+  const sub=document.getElementById('turma-sub');
+  if(sub) sub.textContent='Submódulo '+submodulo+(startDate?' · '+fmtBR(startDate)+' a '+fmtBR(endDate):'');
+  const container=document.getElementById('intern-list');
+  if(!container) return;
+  const ids=Object.keys(APP.interns);
+  if(!ids.length){container.innerHTML='<div class="empty"><div class="ei">👥</div><p>Nenhum interno cadastrado.<br>Toque em "Adicionar Interno".</p></div>';return;}
+  const {program:{startDate:s,endDate:e}}=APP;
+  const days=(s&&e)?getWeekdays(s,e):[];
+  container.innerHTML=ids.map((id,i)=>{
+    const it=APP.interns[id];
+    let mP=0,mR=0,aP=0,aR=0;
+    days.forEach(d=>{const att=it.attendance[d]||{};if(att.morning==='P'){mP++;mR++;}else if(att.morning==='A')mR++;if(att.afternoon==='P'){aP++;aR++;}else if(att.afternoon==='A')aR++;});
+    const gPct=(mR+aR)?Math.round((mP+aP)/(mR+aR)*100):null;
+    const cls=gPct===null?'':gPct>=75?'ok':gPct>=60?'medio':'baixo';
+    const initials=it.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    return `<div class="intern-card ${cls}" onclick="openIntern('${id}')">
+      <div class="intern-avatar">${initials}</div>
+      <div class="intern-info">
+        <div class="intern-name">${i+1}. ${it.name}</div>
+        <div class="mini-stats">
+          <span class="mini-stat ${gPct>=75?'verde':gPct>=60?'amarelo':gPct!==null?'vermelho':''}">${gPct!==null?gPct+'% freq':'sem registro'}</span>
+          ${it.precGlobal?`<span class="mini-stat verde">Conc: ${it.precGlobal}</span>`:''}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <div class="intern-arrow">›</div>
+        <button onclick="event.stopPropagation();removerInterno('${id}')" style="background:none;border:none;font-size:14px;cursor:pointer;color:var(--cinza-e);padding:2px">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// ADD/REMOVE INTERNO
+// ============================================================
+function abrirModalAddInterno(){
+  document.getElementById('add-nome').value='';
+  document.getElementById('modal-add').classList.add('show');
+  setTimeout(()=>document.getElementById('add-nome').focus(),300);
+}
+function adicionarInterno(){
+  const nome=document.getElementById('add-nome').value.trim();
+  if(!nome){showToast('Digite o nome do interno','e');return;}
+  const id=uid();
+  APP.interns[id]={id,name:nome,attendance:{},selfEval:{},precEval:{},selfComments:'',precComments:'',precGlobal:''};
+  save(); fecharModal('modal-add'); renderTurma(); showToast('✓ '+nome+' adicionado','s');
+}
+function removerInterno(id){
+  const it=APP.interns[id];
+  if(!it) return;
+  if(!confirm('Remover '+it.name+'? Os dados serão perdidos.')) return;
+  delete APP.interns[id]; save(); renderTurma(); showToast('Interno removido','e');
+}
+
+// ============================================================
+// NOVA TURMA
+// ============================================================
+function novaTurma(){
+  if(!confirm('Isso removerá todos os internos atuais.\nImprime os relatórios antes de continuar.\n\nContinuar?')) return;
+  const {submodulo,endDate}=APP.program;
+  const nextSub=String(Math.min(parseInt(submodulo)+1,3));
+  const nextStart=endDate?addDays(endDate,3):isoToday();
+  const weeks=nextSub==='1'?4:3;
+  const nextEnd=addWeeks(nextStart,weeks);
+  APP.interns={};
+  APP.program.submodulo=nextSub;
+  APP.program.startDate=nextStart;
+  APP.program.endDate=nextEnd;
+  save(); restoreConfig(); renderTurma();
+  showToast('✓ Submódulo '+nextSub+' iniciado','s');
+}
+
+// ============================================================
+// CONFIG
+// ============================================================
+function saveProgram(){
+  APP.program.preceptorName=document.getElementById('cfg-preceptor').value.trim();
+  APP.program.submodulo=document.getElementById('cfg-submod').value;
+  APP.program.startDate=document.getElementById('cfg-inicio').value;
+  APP.program.endDate=document.getElementById('cfg-fim').value;
+  APP.program.morningName=document.getElementById('cfg-manha').value.trim()||'Manhã';
+  APP.program.afternoonName=document.getElementById('cfg-tarde').value.trim()||'Tarde';
+  save();
+}
+function restoreConfig(){
+  const p=APP.program;
+  document.getElementById('cfg-preceptor').value=p.preceptorName||'';
+  document.getElementById('cfg-submod').value=p.submodulo||'1';
+  document.getElementById('cfg-inicio').value=p.startDate||'';
+  document.getElementById('cfg-fim').value=p.endDate||'';
+  document.getElementById('cfg-manha').value=p.morningName||'';
+  document.getElementById('cfg-tarde').value=p.afternoonName||'';
+}
+function recalcFim(){
+  const inicio=document.getElementById('cfg-inicio').value;
+  if(!inicio) return;
+  const sub=document.getElementById('cfg-submod').value;
+  const weeks=sub==='1'?4:3;
+  document.getElementById('cfg-fim').value=addWeeks(inicio,weeks);
+  saveProgram();
+}
+
+// ============================================================
+// INTERN: FREQUENCY CALENDAR
+// ============================================================
+function buildInternCal(){
+  const it=curIntern(); if(!it) return;
+  const {startDate,endDate,morningName,afternoonName}=APP.program;
+  // update stat labels
+  document.getElementById('if-manha-l').textContent=(morningName||'Manhã').substring(0,10);
+  document.getElementById('if-tarde-l').textContent=(afternoonName||'Tarde').substring(0,10);
+  document.getElementById('intern-freq-sub').textContent=it.name+' · '+fmtBR(startDate)+' a '+fmtBR(endDate);
+
+  if(!startDate||!endDate){
+    document.getElementById('intern-cal-container').innerHTML='<div class="empty"><div class="ei">📅</div><p>Configure as datas na aba Config.</p></div>';
+    updateInternFreqStats(); return;
+  }
+  const days=getWeekdays(startDate,endDate);
+  if(!days.length){document.getElementById('intern-cal-container').innerHTML='<div class="alert aviso"><span>⚠️</span><span>Nenhum dia útil no período.</span></div>';return;}
+  const mn=morningName||'Manhã',tn=afternoonName||'Tarde';
+  let html=`<div style="overflow-x:auto"><table class="cal-table"><thead><tr><th>Dia</th><th>🌅 ${mn}</th><th>🌆 ${tn}</th></tr></thead><tbody>`;
+  days.forEach(d=>{
+    const att=it.attendance[d]||{};
+    const mV=att.morning,aV=att.afternoon;
+    const mT=mV==='P'?'✓':mV==='A'?'✗':'○',aT=aV==='P'?'✓':aV==='A'?'✗':'○';
+    const mC='att-btn '+(mV||''),aC='att-btn '+(aV||'');
+    // today highlight
+    const isToday=d===isoToday()?'style="background:rgba(0,74,124,.04)"':'';
+    html+=`<tr ${isToday}><td>${fmtDate(d)}</td>
+      <td><button id="ical-m-${d}" class="${mC}" onclick="cycleInternAtt('${d}','morning')">${mT}</button></td>
+      <td><button id="ical-a-${d}" class="${aC}" onclick="cycleInternAtt('${d}','afternoon')">${aT}</button></td>
+    </tr>`;
+  });
+  html+='</tbody></table></div>';
+  document.getElementById('intern-cal-container').innerHTML=html;
+  updateInternFreqStats();
+}
+
+function cycleInternAtt(d,period){
+  const it=curIntern();if(!it)return;
+  if(!it.attendance[d])it.attendance[d]={morning:null,afternoon:null};
+  const cur=it.attendance[d][period];
+  it.attendance[d][period]=cur===null?'P':cur==='P'?'A':null;
+  save();
+  const btn=document.getElementById('ical-'+(period==='morning'?'m':'a')+'-'+d);
+  if(btn){const v=it.attendance[d][period];btn.textContent=v==='P'?'✓':v==='A'?'✗':'○';btn.className='att-btn '+(v||'');}
+  updateInternFreqStats();
+}
+
+function updateInternFreqStats(){
+  const it=curIntern();if(!it)return;
+  const {startDate,endDate}=APP.program;
+  if(!startDate||!endDate)return;
+  const days=getWeekdays(startDate,endDate);
+  let mP=0,mR=0,aP=0,aR=0;
+  days.forEach(d=>{const att=it.attendance[d]||{};if(att.morning==='P'){mP++;mR++;}else if(att.morning==='A')mR++;if(att.afternoon==='P'){aP++;aR++;}else if(att.afternoon==='A')aR++;});
+  const mPct=mR?Math.round(mP/mR*100):null,aPct=aR?Math.round(aP/aR*100):null,gPct=(mR+aR)?Math.round((mP+aP)/(mR+aR)*100):null;
+  document.getElementById('if-manha').textContent=mPct!==null?mPct+'%':'–';
+  document.getElementById('if-tarde').textContent=aPct!==null?aPct+'%':'–';
+  document.getElementById('if-global').textContent=gPct!==null?gPct+'%':'–';
+  const gc=document.getElementById('if-global-card');
+  if(gPct!==null)gc.className='fs '+(gPct>=75?'verde':gPct>=60?'amarelo':'vermelho');
+}
+
+// ============================================================
+// DOMAINS (self + preceptor)
+// ============================================================
+function buildDomains(who){
+  const it=curIntern();if(!it)return;
+  const cid=who==='auto'?'auto-domains-container':'prec-domains-container';
+  const store=who==='auto'?it.selfEval:it.precEval;
+  document.getElementById(cid).innerHTML=DOMAINS.map(domain=>{
+    const did=`${who}-dom-${domain.id}`;
+    const avg=getDomAvg(store,domain);
+    const iH=domain.items.map(item=>{
+      const cur=store[item.id];
+      const r1=cur===1?'s1':'',r2=cur===2?'s2':'',r3=cur===3?'s3':'',r4=cur===4?'s4':'';
+      const noS=cur==='NO'?'sel':'';
+      return `<div class="comp-item">
+        <div class="comp-code" style="color:${domain.color}">${item.id}</div>
+        <div class="comp-txt">${item.txt}</div>
+        <div class="rating-row">
+          <button class="rb ${r1}" onclick="setRating('${who}','${item.id}',1,this)">1<br><span style="font-size:8px">Não</span></button>
+          <button class="rb ${r2}" onclick="setRating('${who}','${item.id}',2,this)">2<br><span style="font-size:8px">Parcial</span></button>
+          <button class="rb ${r3}" onclick="setRating('${who}','${item.id}',3,this)">3<br><span style="font-size:8px">Desenv.</span></button>
+          <button class="rb ${r4}" onclick="setRating('${who}','${item.id}',4,this)">4<br><span style="font-size:8px">Pleno</span></button>
+          <button class="nob ${noS}" onclick="setRating('${who}','${item.id}','NO',this)">N/O</button>
+        </div>
+        <div class="rating-labels"><span>Não atingi</span><span>Parcial</span><span>Em desenv.</span><span>Atingi</span></div>
+      </div>`;
+    }).join('');
+    return `<div class="dom-block" id="${did}">
+      <div class="dom-hdr" onclick="toggleDom('${did}')">
+        <div class="dom-hdr-l">
+          <div class="dom-num" style="background:${domain.color}">${domain.id}</div>
+          <div class="dom-name">${domain.name}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="dom-avg" id="avg-${who}-${domain.id}">${avg!==null?avg.toFixed(1):'–'}</div>
+          <div class="dom-tog">▼</div>
+        </div>
+      </div>
+      <div class="dom-body">${iH}</div>
+    </div>`;
+  }).join('');
+
+  if(who==='auto'){
+    const ta=document.getElementById('auto-comments');
+    if(ta)ta.value=it.selfComments||'';
+  }else{
+    const ta=document.getElementById('prec-comments');
+    if(ta)ta.value=it.precComments||'';
+    restoreConceito();
+  }
+}
+
+function toggleDom(id){document.getElementById(id).classList.toggle('open')}
+
+function setRating(who,itemId,val,btn){
+  const it=curIntern();if(!it)return;
+  const store=who==='auto'?it.selfEval:it.precEval;
+  if(store[itemId]===val)delete store[itemId];else store[itemId]=val;
+  save();
+  const row=btn.parentElement;
+  row.querySelectorAll('.rb').forEach(b=>b.className='rb');
+  row.querySelectorAll('.nob').forEach(b=>b.className='nob');
+  if(store[itemId]!==undefined){if(val==='NO')btn.classList.add('sel');else btn.classList.add('s'+val);}
+  const domain=DOMAINS.find(d=>d.items.some(i=>i.id===itemId));
+  if(domain){
+    const store2=who==='auto'?it.selfEval:it.precEval;
+    const avg=getDomAvg(store2,domain);
+    const el=document.getElementById(`avg-${who}-${domain.id}`);
+    if(el)el.textContent=avg!==null?avg.toFixed(1):'–';
+  }
+}
+
+function getDomAvg(store,domain){
+  const vals=domain.items.map(i=>store[i.id]).filter(v=>v&&v!=='NO');
+  return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+}
+
+function saveSelfComment(){const it=curIntern();if(it){it.selfComments=document.getElementById('auto-comments').value;save();}}
+function savePrecComment(){const it=curIntern();if(it){it.precComments=document.getElementById('prec-comments').value;save();}}
+
+function setConceito(val,btn){
+  const it=curIntern();if(!it)return;
+  it.precGlobal=val;save();
+  document.querySelectorAll('.conc-btn').forEach(b=>{b.className='conc-btn';});
+  btn.classList.add('s'+val);
+}
+function restoreConceito(){
+  const it=curIntern();if(!it)return;
+  document.querySelectorAll('.conc-btn').forEach(b=>{b.className='conc-btn';});
+  if(it.precGlobal){const btn=document.getElementById('conc-'+it.precGlobal);if(btn)btn.classList.add('s'+it.precGlobal);}
+}
+
+function confirmAutoaval(){save();showToast('✓ Autoavaliação registrada!','s');}
+function confirmPreceptor(){save();showToast('✓ Avaliação do preceptor registrada!','s');}
+
+// ============================================================
+// RELATÓRIO
+// ============================================================
+function buildReport(){
+  const it=curIntern();if(!it)return;
+  document.getElementById('intern-rel-name').textContent=it.name;
+  const container=document.getElementById('rel-content');
+  const {preceptorName,submodulo,startDate,endDate,morningName,afternoonName}=APP.program;
+  const days=(startDate&&endDate)?getWeekdays(startDate,endDate):[];
+  let mP=0,mR=0,aP=0,aR=0;
+  days.forEach(d=>{const att=it.attendance[d]||{};if(att.morning==='P'){mP++;mR++;}else if(att.morning==='A')mR++;if(att.afternoon==='P'){aP++;aR++;}else if(att.afternoon==='A')aR++;});
+  const mPct=mR?Math.round(mP/mR*100):null,aPct=aR?Math.round(aP/aR*100):null,gPct=(mR+aR)?Math.round((mP+aP)/(mR+aR)*100):null;
+  const fp=p=>p!==null?p+'%':'–';
+  const bc=p=>p>=75?'verde':p>=60?'amarelo':'vermelho';
+
+  const domBars=DOMAINS.map(d=>{
+    const sA=getDomAvg(it.selfEval,d),pA=getDomAvg(it.precEval,d);
+    const sP=sA!==null?(sA/4*100).toFixed(0):0,pP=pA!==null?(pA/4*100).toFixed(0):0;
+    return `<div style="margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;margin-bottom:5px;color:${d.color}">${d.id}. ${d.name}</div>
+      <div class="rel-bar-row"><div class="rel-who" style="color:var(--azul-c)">Auto</div><div class="rel-bg"><div class="rel-bar auto" style="width:${sP}%"></div></div><div class="rel-val">${sA!==null?sA.toFixed(1):'–'}</div></div>
+      <div class="rel-bar-row"><div class="rel-who" style="color:var(--verde)">Prec</div><div class="rel-bg"><div class="rel-bar prec" style="width:${pP}%"></div></div><div class="rel-val">${pA!==null?pA.toFixed(1):'–'}</div></div>
+    </div>`;
+  }).join('');
+
+  const concMap={I:'Insatisfatório',R:'Regular',B:'Bom',MB:'Muito Bom',E:'Excelente'};
+  const concColor={I:'var(--vermelho)',R:'#7A4A00',B:'var(--azul-c)',MB:'var(--verde)',E:'var(--verde)'};
+  const gc=it.precGlobal;
+  const now=new Date().toLocaleString('pt-BR');
+
+  container.innerHTML=`
+    <div style="margin-bottom:12px">
+      <div style="font-size:14px;font-weight:800;margin-bottom:8px">📋 Identificação</div>
+      <div style="font-size:12px;line-height:1.8;color:var(--cinza-e)">
+        <strong style="color:var(--texto)">Interno:</strong> ${it.name}<br>
+        <strong style="color:var(--texto)">Preceptor:</strong> ${preceptorName||'–'}<br>
+        <strong style="color:var(--texto)">Submódulo:</strong> ${submodulo}<br>
+        <strong style="color:var(--texto)">Período:</strong> ${fmtBR(startDate)} a ${fmtBR(endDate)}<br>
+        <strong style="color:var(--texto)">Cenário Manhã:</strong> ${morningName||'–'}<br>
+        <strong style="color:var(--texto)">Cenário Tarde:</strong> ${afternoonName||'–'}
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:14px;font-weight:800;margin-bottom:8px">📅 Frequência</div>
+      <div class="fsg" style="margin-bottom:10px">
+        <div class="fs azul"><div class="fv">${fp(mPct)}</div><div class="fl">${morningName||'Manhã'}</div></div>
+        <div class="fs verde"><div class="fv">${fp(aPct)}</div><div class="fl">${afternoonName||'Tarde'}</div></div>
+        <div class="fs ${gPct!==null?bc(gPct):''}"><div class="fv">${fp(gPct)}</div><div class="fl">Global</div></div>
+      </div>
+      ${gPct!==null?`<div class="pb-wrap"><div class="pb-label"><span>Presença global</span><span style="color:var(--${bc(gPct)})">${gPct}%</span></div><div class="pb-bg"><div class="pb ${bc(gPct)}" style="width:${gPct}%"></div></div></div>`:''}
+    </div>
+    <div class="divider"></div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:14px;font-weight:800;margin-bottom:10px">📊 Competências por Domínio</div>
+      <div style="display:flex;gap:16px;margin-bottom:10px;font-size:11px;font-weight:600">
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:8px;background:var(--azul-c);border-radius:3px;display:inline-block"></span>Autoavaliação</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:8px;background:var(--verde);border-radius:3px;display:inline-block"></span>Preceptor</span>
+      </div>
+      ${domBars}
+    </div>
+    ${it.selfComments?`<div class="divider"></div><div style="margin-bottom:12px"><div style="font-size:14px;font-weight:800;margin-bottom:6px">💬 Reflexão do Interno</div><div style="font-size:12px;line-height:1.6;background:rgba(0,114,188,.05);border-radius:8px;padding:10px 12px;border-left:3px solid var(--azul-c)">${it.selfComments}</div></div>`:''}
+    ${it.precComments?`<div class="divider"></div><div style="margin-bottom:12px"><div style="font-size:14px;font-weight:800;margin-bottom:6px">💬 Feedback do Preceptor</div><div style="font-size:12px;line-height:1.6;background:rgba(0,107,63,.05);border-radius:8px;padding:10px 12px;border-left:3px solid var(--verde)">${it.precComments}</div></div>`:''}
+    ${gc?`<div class="divider"></div><div style="margin-bottom:12px"><div style="font-size:14px;font-weight:800;margin-bottom:8px">🏅 Conceito Global</div><div style="display:inline-flex;align-items:center;gap:10px;background:rgba(0,0,0,.04);border-radius:10px;padding:12px 16px"><span style="font-size:28px;font-weight:800;color:${concColor[gc]}">${gc}</span><span style="font-size:14px;font-weight:700;color:${concColor[gc]}">${concMap[gc]}</span></div></div>`:''}
+    <div class="divider"></div>
+    <div style="font-size:10px;color:var(--cinza-e);text-align:center;line-height:1.6">Gerado em ${now}<br>SBP Nota Técnica nº 134/2024 · InternoPed UEA</div>`;
+}
+
+// ============================================================
+// MODALS
+// ============================================================
+function fecharModal(id){document.getElementById(id).classList.remove('show')}
+document.querySelectorAll('.modal-ov').forEach(m=>m.addEventListener('click',function(e){if(e.target===this)this.classList.remove('show')}));
+
+// ============================================================
+// SYNC
+// ============================================================
+function getScriptUrl(){return localStorage.getItem('interno_script_url')||''}
+function atualizarStatusSync(){
+  const btn=document.getElementById('btn-sync');if(!btn)return;
+  if(!getScriptUrl()){btn.textContent='⚙️ Config';btn.onclick=abrirModalSync;}
+  else{btn.textContent='↑ Sync';btn.onclick=syncData;}
+}
+async function syncData(){
+  const url=getScriptUrl();if(!url){abrirModalSync();return;}
+  const btn=document.getElementById('btn-sync');if(btn)btn.textContent='🔄...';
+  try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({tipo:'internos',dados:APP})});const j=await r.json();showToast(j.ok?'☁️ Sincronizado!':'⚠️ Erro',j.ok?'s':'e');}
+  catch(e){showToast('📵 Sem conexão','e');}
+  if(btn)btn.textContent='↑ Sync';
+}
+function abrirModalSync(){document.getElementById('input-sync-url').value=getScriptUrl();document.getElementById('modal-sync').classList.add('show');}
+function salvarSync(){
+  const url=document.getElementById('input-sync-url').value.trim();
+  if(!url.startsWith('https://script.google.com')){showToast('URL inválida','e');return;}
+  localStorage.setItem('interno_script_url',url);
+  fecharModal('modal-sync');showToast('✓ URL salva!','s');atualizarStatusSync();
+}
+
+// ============================================================
+// PWA
+// ============================================================
+let deferredPrompt=null;
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js').then(reg=>{
+      reg.addEventListener('updatefound',()=>{const nw=reg.installing;nw.addEventListener('statechange',()=>{if(nw.state==='installed'&&navigator.serviceWorker.controller)document.getElementById('update-banner').style.display='flex';});});
+    }).catch(e=>console.warn('[SW]',e));
+  });
+}
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;document.getElementById('install-banner').style.display='flex';});
+window.addEventListener('appinstalled',()=>{deferredPrompt=null;document.getElementById('install-banner').style.display='none';showToast('✓ App instalado!','s');});
+async function installApp(){if(!deferredPrompt)return;deferredPrompt.prompt();const{outcome}=await deferredPrompt.userChoice;if(outcome==='accepted')showToast('✓ Instalando...','s');deferredPrompt=null;document.getElementById('install-banner').style.display='none';}
+function applyUpdate(){navigator.serviceWorker.getRegistration().then(reg=>{if(reg&&reg.waiting){reg.waiting.postMessage({type:'SKIP_WAITING'});window.location.reload();}});}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded',()=>{
+  loadApp();
+  currentDay=isoToday();
+  renderHome();
+  atualizarStatusSync();
+  window.addEventListener('online',()=>{showToast('🌐 Online','s');setTimeout(syncData,1000);});
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "InternoPed UEA – Avaliação do Interno em Pediatria",
+  "short_name": "InternoPed UEA",
+  "description": "Frequência e avaliação do Internato em Pediatria da UEA",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#004A7C",
+  "background_color": "#F4F6F8",
+  "lang": "pt-BR",
+  "icons": [{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]
+}
