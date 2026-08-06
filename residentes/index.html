@@ -920,6 +920,10 @@ textarea{resize:none;height:80px}
       <label>Nome Completo</label>
       <input type="text" id="add-res-nome" placeholder="Nome do residente">
     </div>
+    <div class="fg">
+      <label>E-mail da conta Google</label>
+      <input type="email" id="add-res-email" placeholder="residente@gmail.com">
+    </div>
     <button class="btn btn-primary" onclick="adicionarResidente()">✓ Adicionar</button>
     <button class="btn btn-secondary" onclick="fecharModal('modal-add-res')" style="margin-top:8px">Cancelar</button>
   </div>
@@ -1319,6 +1323,7 @@ function renderTurmaList() {
       <div class="res-avatar ${turmaYear}">${initials}</div>
       <div style="flex:1;min-width:0">
         <div class="res-name">${i+1}. ${r.name}</div>
+        <div style="font-size:10px;color:var(--cinza-e);overflow:hidden;text-overflow:ellipsis">${r.email||'E-mail não cadastrado'}</div>
         <div class="mini-stats">
           <span class="mini-stat ${statCls}">${pct!==null?pct+'% freq':'sem reg.'}</span>
         </div>
@@ -1333,16 +1338,21 @@ function renderTurmaList() {
 
 function abrirModalAddRes() {
   document.getElementById('add-res-nome').value='';
+  document.getElementById('add-res-email').value='';
   document.getElementById('modal-add-res').classList.add('show');
   setTimeout(()=>document.getElementById('add-res-nome').focus(), 300);
 }
 
 function adicionarResidente() {
   const nome=document.getElementById('add-res-nome').value.trim();
+  const email=document.getElementById('add-res-email').value.trim().toLowerCase();
   if(!nome) { showToast('Digite o nome do residente','e'); return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Informe o e-mail Google do residente','e'); return; }
+  const emailExiste=['R1','R2','R3'].some(yr=>Object.values(APP.residentes[yr]||{}).some(r=>(r.email||'').toLowerCase()===email));
+  if(emailExiste) { showToast('Este e-mail já está cadastrado','e'); return; }
   const id=uid();
   if(!APP.residentes[turmaYear]) APP.residentes[turmaYear]={};
-  APP.residentes[turmaYear][id]={ id, name:nome, attendance:{} };
+  APP.residentes[turmaYear][id]={ id, name:nome, email, attendance:{} };
   saveApp();
   fecharModal('modal-add-res');
   updateCounts();
