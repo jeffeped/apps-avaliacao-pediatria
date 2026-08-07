@@ -424,7 +424,11 @@ textarea{resize:none;height:80px}
       <button class="ytab R3" data-year="R3" onclick="selectTurmaYear('R3',this)">R3 <span id="cnt-R3">(0)</span></button>
     </div>
     <div style="font-size:11px;color:var(--cinza-e);margin-bottom:12px;font-weight:600" id="turma-mod-label">–</div>
-    <button class="btn btn-primary" id="btn-add-res" onclick="abrirModalAddRes()">+ Adicionar Residente</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn btn-primary" id="btn-add-res" onclick="abrirModalAddRes()">+ Adicionar Residente</button>
+      <button class="btn" style="background:var(--azul);color:#fff" onclick="document.getElementById('import-res-file').click()">📥 Importar .txt</button>
+    </div>
+    <input id="import-res-file" type="file" accept=".txt,text/plain" hidden onchange="importarResidentesTxt(this)">
   </div>
 
   <div class="card" style="padding-top:12px;padding-bottom:8px">
@@ -1360,6 +1364,39 @@ function adicionarResidente() {
   renderTurmaList();
   updateResidentesList();
   showToast('✓ '+nome+' adicionado','s');
+}
+
+function importarResidentesTxt(input) {
+  const file=input.files&&input.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try {
+      const linhas=String(reader.result||'').replace(/^\uFEFF/,'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+      const validos=[],erros=[];
+      linhas.forEach((linha,idx)=>{
+        const partes=linha.split(';').map(x=>x.trim());
+        const nome=partes[0]||'',email=(partes[1]||'').toLowerCase(),ano=(partes[2]||turmaYear).toUpperCase();
+        if(!nome){erros.push(`Linha ${idx+1}: nome ausente`);return}
+        if(!['R1','R2','R3'].includes(ano)){erros.push(`Linha ${idx+1}: use R1, R2 ou R3`);return}
+        if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){erros.push(`Linha ${idx+1}: e-mail inválido`);return}
+        const emailExiste=email&&(['R1','R2','R3'].some(yr=>Object.values(APP.residentes[yr]||{}).some(r=>(r.email||'').toLowerCase()===email))||validos.some(r=>r.email===email));
+        const nomeExiste=Object.values(APP.residentes[ano]||{}).some(r=>r.name.trim().toLowerCase()===nome.toLowerCase())||validos.some(r=>r.ano===ano&&r.nome.toLowerCase()===nome.toLowerCase());
+        if(emailExiste||nomeExiste){erros.push(`Linha ${idx+1}: residente duplicado`);return}
+        validos.push({nome,email,ano});
+      });
+      if(!validos.length){showToast(erros[0]||'Nenhum residente válido no arquivo','e');return}
+      const resumo=validos.map(r=>`${r.ano} · ${r.nome}${r.email?' · '+r.email:''}`).join('\n');
+      const aviso=erros.length?`\n\n${erros.length} linha(s) serão ignoradas.`:'';
+      if(!confirm(`Importar ${validos.length} residente(s)?\n\n${resumo}${aviso}`)) return;
+      validos.forEach(r=>{const id=uid();if(!APP.residentes[r.ano])APP.residentes[r.ano]={};APP.residentes[r.ano][id]={id,name:r.nome,email:r.email,attendance:{}}});
+      saveApp();updateCounts();renderTurmaList();updateResidentesList();sincronizarAuto('residentes',APP);
+      showToast(`✓ ${validos.length} residente(s) importado(s)`,'s');
+    } catch(e) { showToast('Não foi possível ler o arquivo .txt','e'); }
+    finally { input.value=''; }
+  };
+  reader.onerror=()=>{showToast('Não foi possível ler o arquivo .txt','e');input.value=''};
+  reader.readAsText(file,'UTF-8');
 }
 
 function removerResidente(year, id) {
