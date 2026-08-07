@@ -354,7 +354,9 @@ textarea{resize:none;height:80px}
 
   <div class="card">
     <button class="btn btn-primary" onclick="abrirModalAddInterno()">+ Adicionar Interno</button>
+    <button class="btn btn-secondary" onclick="importarGrupoG1()">⬇ Importar G1 da turma 40/41 (11 alunos)</button>
     <button class="btn btn-secondary" onclick="importarGrupoG2()">⬇ Importar G2 da turma 40/41 (11 alunos)</button>
+    <button class="btn btn-secondary" onclick="importarGrupoG3()">⬇ Importar G3 da turma 40/41 (11 alunos)</button>
   </div>
 
   <div class="card" style="padding-top:12px;padding-bottom:8px">
@@ -890,25 +892,44 @@ function adicionarInterno(){
   APP.interns[id]={id,name:nome,attendance:{},selfEval:{},precEval:{},selfComments:'',precComments:'',precGlobal:''};
   save(); fecharModal('modal-add'); renderTurma(); showToast('✓ '+nome+' adicionado','s');
 }
+function importarGrupoG1(){
+  importarGrupo('G1',[
+    'Adelson Soares Moreira Neto','Adriano de Souza Silva','Beatriz Cruz Garcia',
+    'Ryan Pablo Silva Florêncio','Yara Desirree Cordeiro de Souza','Júlia Kayla Maia Oliveira',
+    'Eric dos Santos Carvalho','Isabelle de Souza Leal','Marcos Davi Vaz de Andrade',
+    'Mariana Moreira Tenório de Holanda','Raul Noleto Nepomuceno'
+  ]);
+}
 function importarGrupoG2(){
-  const nomes=[
+  importarGrupo('G2',[
     'Lara Jhulie Sakamoto Queiroz','Luane Pamela Silva Florêncio','Alessandra Souza dos Santos',
     'Giulianna Pereira Cavalcante','Marifran Marques de Aguiar','Samuel Brandão de Almeida',
     'Lucineia Nascimento Bezerra','Rhonan Alberto de Oliveira Pereira','Virgínia Souza Galvão',
     'Vitor Fonseca Andrade','Davi Soares Lima'
-  ];
-  if(!confirm('Importar os 11 alunos do G2?\n\nOs internos já cadastrados serão preservados.')) return;
+  ]);
+}
+function importarGrupoG3(){
+  importarGrupo('G3',[
+    'Abílio Julio Brazão Miguel','Yngryson Almeida Diniz','Gabriel Ramos Godinho',
+    'Zélia Carlen de Oliveira Brandão','Guilherme Miller Souza Desidério',
+    'Dante Carlos Eduardo Castro Alcantara','Caio de Oliveira Rodrigues',
+    'Gustavo Emmanuel do Nascimento Campos','Breno Lucas Pereira Rodrigues',
+    'Kedson Luiz Reis da Costa Filho','Raimundo André Viana de Melo'
+  ]);
+}
+function importarGrupo(grupo,nomes){
+  if(!confirm(`Importar os ${nomes.length} alunos do ${grupo}?\n\nOs internos já cadastrados serão preservados.`)) return;
   const existentes=new Set(Object.values(APP.interns).map(it=>it.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim()));
   let adicionados=0;
   nomes.forEach(nome=>{
     const chave=nome.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
     if(existentes.has(chave)) return;
     const id=uid();
-    APP.interns[id]={id,name:nome,group:'G2',attendance:{},selfEval:{},precEval:{},selfComments:'',precComments:'',precGlobal:''};
+    APP.interns[id]={id,name:nome,group:grupo,attendance:{},selfEval:{},precEval:{},selfComments:'',precComments:'',precGlobal:''};
     existentes.add(chave); adicionados++;
   });
   save(); renderTurma(); renderHome();
-  showToast(adicionados?`✓ ${adicionados} alunos do G2 importados`:'G2 já estava cadastrado','s');
+  showToast(adicionados?`✓ ${adicionados} alunos do ${grupo} importados`:`${grupo} já estava cadastrado`,'s');
 }
 function removerInterno(id){
   const it=APP.interns[id];
