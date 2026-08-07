@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Portal do Preceptor — ResidPed UEA</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    :root{--green:#007a4d;--blue:#075f91;--ink:#152238;--muted:#687789;--bg:#f2f5f7;--line:#dce4e8;--red:#b42318}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,sans-serif}.shell{max-width:650px;margin:auto;min-height:100vh;background:var(--bg)}header{background:linear-gradient(135deg,#064f72,#087aa0);color:#fff;padding:24px 22px 18px}.brand{font-size:25px;font-weight:800}.sub{opacity:.9;margin-top:3px}.profile{display:flex;align-items:center;gap:12px;border-top:1px solid #ffffff38;margin-top:18px;padding-top:15px}.profile img{width:42px;height:42px;border-radius:50%;background:#fff}.grow{flex:1}.small{font-size:13px;opacity:.9}.btn-out{border:1px solid #ffffff99;background:transparent;color:#fff;border-radius:9px;padding:9px 13px}.content{padding:18px}.card{background:#fff;border-radius:18px;padding:20px;margin-bottom:15px;box-shadow:0 4px 16px #14344812}.hero{text-align:center;border-left:6px solid var(--green)}h2{font-size:20px;margin:0 0 9px}p{line-height:1.45}.muted{color:var(--muted);font-size:14px}.login{max-width:430px;margin:18vh auto;background:#fff;border-radius:22px;padding:35px 25px;text-align:center;box-shadow:0 12px 36px #1233}.icon{font-size:44px}.login h1{font-size:24px}.error{background:#fff0ef;color:var(--red);padding:12px;border-radius:10px;font-size:13px;margin-top:14px}.task{border-top:5px solid var(--green)}.meta{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px}.tag{background:#e8f4ef;color:#00633f;border-radius:99px;padding:6px 10px;font-weight:700;font-size:12px}.resident{font-size:22px;font-weight:800;margin:14px 0}.choices{display:grid;gap:9px}.choice{width:100%;border:1px solid var(--line);border-radius:11px;background:#fff;padding:13px;text-align:left;font-size:15px;font-weight:700}.choice.selected{border:2px solid var(--green);background:#eaf7f1;color:#00653f}.choice.abs.selected{border-color:#c83b32;background:#fff0ef;color:#9d1b14}textarea{width:100%;height:76px;border:1px solid var(--line);border-radius:10px;padding:11px;margin-top:12px;font:inherit}.submit,.refresh{width:100%;border:0;border-radius:11px;background:var(--green);color:#fff;padding:14px;font-size:16px;font-weight:800;margin-top:12px}.refresh{background:var(--blue)}.done{border-left:5px solid #7c8a96}.status{font-weight:800;color:var(--green)}.empty{text-align:center;padding:28px 18px}.hide{display:none!important}.loading{text-align:center;padding:40px;color:var(--muted)}footer{text-align:center;color:var(--muted);font-size:12px;padding:5px 20px 25px}
+  </style>
+</head>
+<body><div class="shell">
+  <section id="login" class="login">
+    <div class="icon">🩺</div><h1>Portal do Preceptor</h1>
+    <p class="muted">Entre com a conta Google cadastrada pela coordenação. O acesso é individual.</p>
+    <div id="googleBtn" style="display:flex;justify-content:center;margin-top:22px"></div><div id="loginError"></div>
+  </section>
+  <main id="app" class="hide">
+    <header><div class="brand">ResidPed UEA</div><div class="sub">Portal do Preceptor</div>
+      <div class="profile"><img id="photo" alt=""><div class="grow"><b id="name"></b><div class="small" id="assignments"></div></div><button class="btn-out" onclick="logout()">Sair</button></div>
+    </header>
+    <div class="content">
+      <div class="card hero"><h2>Validação aleatória de frequência</h2><p class="muted">Em cada dia, até três residentes do programa são sorteados. Você verá somente as verificações atribuídas a você e já liberadas pelo horário.</p></div>
+      <div id="tasks" class="loading">Verificando solicitações…</div>
+      <button class="refresh" onclick="loadTasks()">↻ Atualizar</button>
+    </div><footer>Sem fotos e sem rastreamento. A resposta registra o preceptor e o horário da validação.</footer>
+  </main>
+</div><script>
+const CLIENT_ID='439450410940-2teog3fo9flv2hvidgop73dtsuj4okp2.apps.googleusercontent.com';
+const API='https://script.google.com/macros/s/AKfycbx0ho_ppfDeuJGQ6NMkN47vGEMsPCyoIy-K3CXLhmdMRHtV7paA96Z_Xqq8fXm_UQDA/exec';
+let token='',profile=null,selected={};
+function api(tipo,dados={}){return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({tipo:tipo,token:token,dados:dados})}).then(r=>r.json()).then(r=>{if(!r.ok)throw new Error(r.erro||'Não foi possível concluir.');return r})}
+function decodeJwt(t){try{return JSON.parse(decodeURIComponent(escape(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')))))}catch(e){return{}}}
+async function credential(resp){token=resp.credential;sessionStorage.setItem('preceptor_token',token);await enter()}
+async function enter(){try{const r=await api('perfil_preceptor');profile=r.perfil;const claims=decodeJwt(token);document.getElementById('name').textContent=profile.nome;document.getElementById('photo').src=claims.picture||'';document.getElementById('assignments').textContent=profile.atribuicoes.map(a=>a.ano+' · '+a.modulo).join(' | ');document.getElementById('login').classList.add('hide');document.getElementById('app').classList.remove('hide');loadTasks()}catch(e){sessionStorage.removeItem('preceptor_token');showLoginError(e.message)}}
+function showLoginError(msg){document.getElementById('loginError').innerHTML='<div class="error">'+esc(msg)+'</div>'}
+async function loadTasks(){const box=document.getElementById('tasks');box.className='loading';box.textContent='Verificando solicitações…';try{const r=await api('validacoes_preceptor');render(r.validacoes)}catch(e){box.className='card error';box.textContent=e.message}}
+function render(items){const box=document.getElementById('tasks');box.className='';if(!items.length){box.innerHTML='<div class="card empty"><div class="icon">✓</div><h2>Nenhuma validação disponível agora</h2><p class="muted">Novas solicitações podem aparecer nos horários sorteados entre 9h e 17h.</p></div>';return}box.innerHTML=items.map(v=>v.status==='Pendente'?task(v):done(v)).join('')}
+function task(v){return '<div class="card task"><div class="meta"><span class="tag">'+esc(v.hora)+'</span><span class="tag">'+esc(v.ano)+'</span><span class="tag">'+esc(v.modulo)+'</span></div><div class="muted">Confirme a situação de:</div><div class="resident">'+esc(v.residente)+'</div><div class="choices">'+choice(v.id,'Presente','✓ Presente','')+choice(v.id,'Ausente','× Ausente','abs')+choice(v.id,'Atividade externa autorizada','↗ Atividade externa autorizada','')+choice(v.id,'Não foi possível verificar','? Não foi possível verificar','')+'</div><textarea id="obs-'+v.id+'" placeholder="Observação opcional"></textarea><button class="submit" onclick="submitTask(\''+v.id+'\',this)">Enviar validação</button></div>'}
+function choice(id,value,label,cls){return '<button class="choice '+cls+'" data-id="'+id+'" data-value="'+value+'" onclick="choose(this)">'+label+'</button>'}
+function done(v){return '<div class="card done"><div class="meta"><span class="tag">'+esc(v.hora)+'</span><span class="tag">'+esc(v.ano+' · '+v.modulo)+'</span></div><b>'+esc(v.residente)+'</b><p class="status">'+esc(v.status)+'</p><div class="muted">Respondido em '+esc(v.respondidoEm)+'</div></div>'}
+function choose(btn){document.querySelectorAll('.choice[data-id="'+btn.dataset.id+'"]').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');selected[btn.dataset.id]=btn.dataset.value}
+async function submitTask(id,btn){if(!selected[id]){alert('Selecione uma opção.');return}btn.disabled=true;btn.textContent='Enviando…';try{await api('responder_validacao',{id:id,status:selected[id],observacao:document.getElementById('obs-'+id).value});await loadTasks()}catch(e){alert(e.message);btn.disabled=false;btn.textContent='Enviar validação'}}
+function logout(){token='';profile=null;sessionStorage.removeItem('preceptor_token');google.accounts.id.disableAutoSelect();location.reload()}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+window.onload=()=>{google.accounts.id.initialize({client_id:CLIENT_ID,callback:credential});google.accounts.id.renderButton(document.getElementById('googleBtn'),{theme:'outline',size:'large',text:'signin_with',locale:'pt-BR',width:300});const saved=sessionStorage.getItem('preceptor_token');if(saved){token=saved;enter()}setInterval(()=>{if(token)loadTasks()},60000)};
+  </script></body></html>

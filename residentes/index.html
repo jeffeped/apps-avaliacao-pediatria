@@ -336,7 +336,6 @@ textarea{resize:none;height:80px}
     <button class="tab-btn" data-screen="avaliacao" onclick="showScreen('avaliacao',this)"><span class="ti">📋</span>Avaliação</button>
     <button class="tab-btn" data-screen="historico" onclick="showScreen('historico',this)"><span class="ti">📊</span>Histórico</button>
     <button class="tab-btn" data-screen="feedback" onclick="showScreen('feedback',this)"><span class="ti">💬</span>Feedback</button>
-    <button class="tab-btn" data-screen="autoaval" onclick="showScreen('autoaval',this)"><span class="ti">🔍</span>Autoaval.</button>
     <button class="tab-btn" data-screen="dashboard" onclick="showScreen('dashboard',this)"><span class="ti">📈</span>Dashboard</button>
     <button class="tab-btn" data-screen="config" onclick="showScreen('config',this)"><span class="ti">⚙️</span>Config</button>
   </div>
@@ -846,6 +845,13 @@ textarea{resize:none;height:80px}
   </div>
 
   <div class="card">
+    <div class="card-title">Portal dos preceptores</div>
+    <div class="fg"><label>Um vínculo por linha</label><textarea id="cfg-preceptores" style="height:130px" placeholder="Nome;email@gmail.com;R1;Nome exato do módulo"></textarea></div>
+    <button class="btn btn-primary" onclick="salvarPreceptoresPortal()">Salvar e sincronizar preceptores</button>
+    <div class="gps-note">Repita o mesmo preceptor em linhas diferentes se ele acompanhar mais de um módulo. O nome do módulo deve ser igual ao configurado para o residente.</div>
+  </div>
+
+  <div class="card">
     <div class="card-title">📍 Local permitido para o ponto</div>
     <div class="fg"><label>Nome do local de estágio</label><input type="text" id="cfg-local-nome" placeholder="Ex: Hospital Universitário" oninput="saveConfig()"></div>
     <div class="fr">
@@ -1015,6 +1021,7 @@ const COMPETENCIAS = {
 const KEY = 'residped_v3';
 let APP = {
   preceptorName: '',
+  preceptores: '',
   programas: {
     R1: { moduloName:'', startDate:'', endDate:'', morning:'Manhã', afternoon:'Tarde' },
     R2: { moduloName:'', startDate:'', endDate:'', morning:'Manhã', afternoon:'Tarde' },
@@ -1028,7 +1035,7 @@ let APP = {
 function loadArr(key) { try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; } }
 function saveArr(key, data) { try { localStorage.setItem(key, JSON.stringify(data)); } catch(e){} }
 function saveApp() { try { localStorage.setItem(KEY, JSON.stringify(APP)); } catch(e){} }
-function loadApp() { try { const d=JSON.parse(localStorage.getItem(KEY)); if(d) APP=d; } catch(e){} if(!APP.pontoConfig) APP.pontoConfig={nome:'',latitude:null,longitude:null,raio:150}; }
+function loadApp() { try { const d=JSON.parse(localStorage.getItem(KEY)); if(d) APP=d; } catch(e){} if(!APP.pontoConfig) APP.pontoConfig={nome:'',latitude:null,longitude:null,raio:150}; if(APP.preceptores==null) APP.preceptores=''; }
 
 // Current state
 let currentDay = null;
@@ -1747,6 +1754,7 @@ function limparTodosDados() {
 // ============================================================
 function saveConfig() {
   APP.preceptorName=document.getElementById('cfg-preceptor').value.trim();
+  APP.preceptores=document.getElementById('cfg-preceptores').value.trim();
   APP.pontoConfig={nome:document.getElementById('cfg-local-nome').value.trim(),latitude:document.getElementById('cfg-local-lat').value===''?null:Number(document.getElementById('cfg-local-lat').value),longitude:document.getElementById('cfg-local-lng').value===''?null:Number(document.getElementById('cfg-local-lng').value),raio:Number(document.getElementById('cfg-local-raio').value)||150};
   ['R1','R2','R3'].forEach(yr=>{
     if(!APP.programas[yr]) APP.programas[yr]={};
@@ -1761,6 +1769,7 @@ function saveConfig() {
 
 function restoreConfig() {
   document.getElementById('cfg-preceptor').value=APP.preceptorName||'';
+  document.getElementById('cfg-preceptores').value=APP.preceptores||'';
   const c=APP.pontoConfig||{};document.getElementById('cfg-local-nome').value=c.nome||'';document.getElementById('cfg-local-lat').value=c.latitude??'';document.getElementById('cfg-local-lng').value=c.longitude??'';document.getElementById('cfg-local-raio').value=c.raio||150;
   ['R1','R2','R3'].forEach(yr=>{
     const p=APP.programas[yr]||{};
@@ -1770,6 +1779,12 @@ function restoreConfig() {
     document.getElementById('cfg-'+yr+'-m').value=p.morning||'';
     document.getElementById('cfg-'+yr+'-t').value=p.afternoon||'';
   });
+}
+
+async function salvarPreceptoresPortal() {
+  saveConfig();
+  await sincronizarAuto('residentes', APP);
+  showToast('Preceptores sincronizados','s');
 }
 
 function recalcFim(yr) {
