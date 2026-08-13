@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="InternoPed UEA">
 <meta name="mobile-web-app-capable" content="yes">
-<link rel="manifest" href="interno_manifest.json">
+<link rel="manifest" href="./manifest.webmanifest">
 <title>InternoPed UEA – Avaliação do Interno em Pediatria</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -93,6 +93,8 @@ textarea{resize:none;height:80px}
 .btn-danger{background:rgba(208,2,27,.08);color:var(--vermelho);border:1.5px solid rgba(208,2,27,.2)}
 .btn-sm{padding:8px 14px;font-size:12px;width:auto;display:inline-block}
 .btn:active{transform:scale(.98)}
+.export-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.export-actions .btn{margin-top:0;padding:11px 8px;font-size:12px}
 
 /* ALERT */
 .alert{border-radius:var(--rs);padding:10px 12px;font-size:12px;margin:10px 0;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
@@ -282,6 +284,7 @@ textarea{resize:none;height:80px}
   <div class="tab-bar" id="main-tabs">
     <button class="tab-btn active" onclick="showMainScreen('home',this)"><span class="ti">🏠</span>Início</button>
     <button class="tab-btn" onclick="showMainScreen('turma',this)"><span class="ti">👥</span>Turma</button>
+    <button class="tab-btn" onclick="showMainScreen('avaliacao',this)"><span class="ti">📋</span>Avaliação</button>
     <button class="tab-btn" onclick="showMainScreen('config',this)"><span class="ti">⚙️</span>Config</button>
   </div>
   <div class="tab-bar" id="intern-tabs" style="display:none">
@@ -341,6 +344,18 @@ textarea{resize:none;height:80px}
     <div class="card-title">📊 Visão Geral da Turma</div>
     <div id="home-overview"></div>
   </div>
+
+  <div class="card">
+    <div class="card-title">⬇ Exportar frequência do submódulo</div>
+    <div class="fg">
+      <label>Interno para exportação individual</label>
+      <select id="freq-export-interno"></select>
+    </div>
+    <div class="export-actions">
+      <button class="btn btn-primary" onclick="exportarFrequencia('individual')">⬇ Individual (CSV)</button>
+      <button class="btn btn-secondary" onclick="exportarFrequencia('turma')">⬇ Turma completa (CSV)</button>
+    </div>
+  </div>
 </div>
 
 <!-- ============================================================ -->
@@ -369,6 +384,66 @@ textarea{resize:none;height:80px}
     <div class="card-title" style="color:var(--vermelho)">⚠️ Nova Turma</div>
     <div class="alert aviso"><span>⚠️</span><div>Ao iniciar nova turma, os dados dos internos atuais são removidos. Imprima os relatórios antes.</div></div>
     <button class="btn btn-danger" onclick="novaTurma()">🔄 Iniciar Nova Turma</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TELA: AVALIAÇÃO -->
+<!-- ============================================================ -->
+<div id="screen-avaliacao" class="screen">
+  <div class="sec-hdr verde">
+    <h2>📋 Avaliação do Interno</h2>
+    <p id="avaliacao-sub">Selecione um interno da turma atual</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">👤 Identificação</div>
+    <div class="fg">
+      <label>Interno</label>
+      <select id="avaliacao-interno" onchange="selecionarInternoAvaliacao(this.value)"></select>
+    </div>
+    <div id="avaliacao-contexto" style="font-size:11px;color:var(--cinza-e);line-height:1.6"></div>
+  </div>
+
+  <div id="avaliacao-empty" class="card">
+    <div class="empty"><div class="ei">📋</div><p>Cadastre internos na aba Turma para iniciar uma avaliação.</p></div>
+  </div>
+
+  <div id="avaliacao-form" style="display:none">
+    <div class="card">
+      <div class="alert verde"><span>📋</span><div>Avalie todas as 45 competências. Use N/O quando a competência não foi observável no cenário.</div></div>
+      <div id="avaliacao-progress" style="margin-top:12px"></div>
+    </div>
+    <div style="padding:0 12px" id="avaliacao-domains-container"></div>
+    <div class="card">
+      <div class="fg">
+        <label>Feedback Qualitativo</label>
+        <textarea id="avaliacao-comments" placeholder="Pontos fortes, áreas de melhoria..." style="height:100px" oninput="saveAvaliacaoComment()"></textarea>
+      </div>
+      <div class="fg">
+        <label>Conceito Global</label>
+        <div class="conc-sel">
+          <button class="conc-btn" id="avaliacao-conc-I" onclick="setConceito('I',this,'avaliacao')">I<br><span style="font-size:8px">Insatisf.</span></button>
+          <button class="conc-btn" id="avaliacao-conc-R" onclick="setConceito('R',this,'avaliacao')">R<br><span style="font-size:8px">Regular</span></button>
+          <button class="conc-btn" id="avaliacao-conc-B" onclick="setConceito('B',this,'avaliacao')">B<br><span style="font-size:8px">Bom</span></button>
+          <button class="conc-btn" id="avaliacao-conc-MB" onclick="setConceito('MB',this,'avaliacao')">MB<br><span style="font-size:8px">M. Bom</span></button>
+          <button class="conc-btn" id="avaliacao-conc-E" onclick="setConceito('E',this,'avaliacao')">E<br><span style="font-size:8px">Excelente</span></button>
+        </div>
+      </div>
+      <button class="btn btn-verde" onclick="confirmPreceptor('avaliacao')">✓ Salvar Avaliação</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⬇ Exportar avaliações do submódulo</div>
+    <div class="fg">
+      <label>Interno para exportação individual</label>
+      <select id="avaliacao-export-interno"></select>
+    </div>
+    <div class="export-actions">
+      <button class="btn btn-verde" onclick="exportarAvaliacao('individual')">⬇ Individual (CSV)</button>
+      <button class="btn btn-secondary" onclick="exportarAvaliacao('turma')">⬇ Turma completa (CSV)</button>
+    </div>
   </div>
 </div>
 
@@ -637,10 +712,23 @@ let attendanceMode='week';
 
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(APP));}catch(e){}}
-function loadApp(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d)APP=d;}catch(e){}}
+function loadApp(){
+  try{const d=JSON.parse(localStorage.getItem(KEY));if(d)APP=d;}catch(e){}
+  APP.program=APP.program||{submodulo:'1',preceptorName:'',startDate:'',endDate:'',morningName:'',afternoonName:''};
+  APP.interns=APP.interns||{};
+  Object.values(APP.interns).forEach(it=>{
+    it.attendance=it.attendance||{};
+    it.selfEval=it.selfEval||{};
+    it.precEval=it.precEval||{};
+    it.selfComments=it.selfComments||'';
+    it.precComments=it.precComments||'';
+    it.precGlobal=it.precGlobal||'';
+  });
+}
 
 function intern(id){return APP.interns[id]||null}
 function curIntern(){return intern(currentInternId)}
+function escapeHtml(value){return String(value??'').replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]))}
 
 // ============================================================
 // NAV
@@ -658,6 +746,7 @@ function showMainScreen(name,btn){
   document.getElementById('hdr-sub').textContent='Internato em Pediatria · Matriz de Competências';
   if(name==='home') renderHome();
   if(name==='turma') renderTurma();
+  if(name==='avaliacao') renderAvaliacao();
   if(name==='config') restoreConfig();
 }
 
@@ -728,6 +817,7 @@ function renderHome(){
   renderDailyAtt();
   renderWeekAttendance();
   renderHomeOverview();
+  preencherSelectInternos('freq-export-interno');
 }
 
 function setAttendanceMode(mode){attendanceMode=mode;document.getElementById('intern-weekly-attendance').style.display=mode==='week'?'block':'none';document.getElementById('intern-daily-attendance').style.display=mode==='day'?'block':'none';document.getElementById('intern-mode-week').classList.toggle('active',mode==='week');document.getElementById('intern-mode-day').classList.toggle('active',mode==='day');if(mode==='week')renderWeekAttendance();else renderDailyAtt()}
@@ -837,6 +927,51 @@ function renderHomeOverview(){
       <div class="intern-arrow">›</div>
     </div>`;
   }).join('');
+}
+
+// ============================================================
+// AVALIAÇÃO — ACESSO PELA TURMA ATUAL
+// ============================================================
+function preencherSelectInternos(selectId,selecionado){
+  const select=document.getElementById(selectId);if(!select)return;
+  const ids=Object.keys(APP.interns).sort((a,b)=>APP.interns[a].name.localeCompare(APP.interns[b].name,'pt-BR'));
+  select.innerHTML=ids.length
+    ? ids.map(id=>`<option value="${escapeHtml(id)}">${escapeHtml(APP.interns[id].name)}</option>`).join('')
+    : '<option value="">Nenhum interno cadastrado</option>';
+  const alvo=selecionado&&APP.interns[selecionado]?selecionado:ids[0]||'';
+  select.value=alvo;
+}
+
+function renderAvaliacao(){
+  const ids=Object.keys(APP.interns).sort((a,b)=>APP.interns[a].name.localeCompare(APP.interns[b].name,'pt-BR'));
+  if(!currentInternId||!APP.interns[currentInternId])currentInternId=ids[0]||null;
+  preencherSelectInternos('avaliacao-interno',currentInternId);
+  preencherSelectInternos('avaliacao-export-interno',currentInternId);
+  const p=APP.program||{};
+  document.getElementById('avaliacao-sub').textContent=`Submódulo ${p.submodulo||'–'} · ${p.startDate?fmtBR(p.startDate)+' a '+fmtBR(p.endDate):'período não configurado'}`;
+  selecionarInternoAvaliacao(currentInternId||'');
+}
+
+function selecionarInternoAvaliacao(id){
+  currentInternId=id&&APP.interns[id]?id:null;
+  const vazio=document.getElementById('avaliacao-empty');
+  const form=document.getElementById('avaliacao-form');
+  const contexto=document.getElementById('avaliacao-contexto');
+  if(!currentInternId){
+    vazio.style.display='block';form.style.display='none';contexto.textContent='';return;
+  }
+  const it=curIntern(),p=APP.program||{};
+  vazio.style.display='none';form.style.display='block';
+  contexto.innerHTML=`<strong style="color:var(--texto)">${escapeHtml(it.name)}</strong><br>Submódulo ${escapeHtml(p.submodulo||'–')} · Preceptor: ${escapeHtml(p.preceptorName||'não informado')}<br>${escapeHtml(p.morningName||'Manhã')} / ${escapeHtml(p.afternoonName||'Tarde')}`;
+  const exportSelect=document.getElementById('avaliacao-export-interno');
+  if(exportSelect)exportSelect.value=currentInternId;
+  buildDomains('avaliacao');
+}
+
+function saveAvaliacaoComment(){
+  const it=curIntern();if(!it)return;
+  it.precComments=document.getElementById('avaliacao-comments').value;
+  save();
 }
 
 // ============================================================
@@ -1053,8 +1188,10 @@ function updateInternFreqStats(){
 // ============================================================
 function buildDomains(who){
   const it=curIntern();if(!it)return;
-  const cid=who==='auto'?'auto-domains-container':'prec-domains-container';
-  const store=who==='auto'?it.selfEval:it.precEval;
+  const isAuto=who==='auto';
+  const isAvaliacao=who==='avaliacao';
+  const cid=isAuto?'auto-domains-container':isAvaliacao?'avaliacao-domains-container':'prec-domains-container';
+  const store=isAuto?it.selfEval:it.precEval;
   document.getElementById(cid).innerHTML=DOMAINS.map(domain=>{
     const did=`${who}-dom-${domain.id}`;
     const avg=getDomAvg(store,domain);
@@ -1090,14 +1227,15 @@ function buildDomains(who){
     </div>`;
   }).join('');
 
-  if(who==='auto'){
+  if(isAuto){
     const ta=document.getElementById('auto-comments');
     if(ta)ta.value=it.selfComments||'';
     updateAutoProgress();
   }else{
-    const ta=document.getElementById('prec-comments');
+    const ta=document.getElementById(isAvaliacao?'avaliacao-comments':'prec-comments');
     if(ta)ta.value=it.precComments||'';
-    restoreConceito();
+    restoreConceito(isAvaliacao?'avaliacao':'prec');
+    updatePreceptorProgress(who);
   }
 }
 
@@ -1120,6 +1258,7 @@ function setRating(who,itemId,val,btn){
     if(el)el.textContent=avg!==null?avg.toFixed(1):'–';
   }
   if(who==='auto')updateAutoProgress();
+  else updatePreceptorProgress(who);
 }
 
 function updateAutoProgress(){
@@ -1139,16 +1278,29 @@ function getDomAvg(store,domain){
 function saveSelfComment(){const it=curIntern();if(it){it.selfComments=document.getElementById('auto-comments').value;save();}}
 function savePrecComment(){const it=curIntern();if(it){it.precComments=document.getElementById('prec-comments').value;save();}}
 
-function setConceito(val,btn){
+function setConceito(val,btn,scope){
   const it=curIntern();if(!it)return;
   it.precGlobal=val;save();
-  document.querySelectorAll('.conc-btn').forEach(b=>{b.className='conc-btn';});
+  scope=scope||(btn.closest('#avaliacao-form')?'avaliacao':'prec');
+  const container=scope==='avaliacao'?'#avaliacao-form':'#intern-screen-prec';
+  document.querySelectorAll(container+' .conc-btn').forEach(b=>{b.className='conc-btn';});
   btn.classList.add('s'+val);
 }
-function restoreConceito(){
+function restoreConceito(scope='prec'){
   const it=curIntern();if(!it)return;
-  document.querySelectorAll('.conc-btn').forEach(b=>{b.className='conc-btn';});
-  if(it.precGlobal){const btn=document.getElementById('conc-'+it.precGlobal);if(btn)btn.classList.add('s'+it.precGlobal);}
+  const container=scope==='avaliacao'?'#avaliacao-form':'#intern-screen-prec';
+  const prefix=scope==='avaliacao'?'avaliacao-conc-':'conc-';
+  document.querySelectorAll(container+' .conc-btn').forEach(b=>{b.className='conc-btn';});
+  if(it.precGlobal){const btn=document.getElementById(prefix+it.precGlobal);if(btn)btn.classList.add('s'+it.precGlobal);}
+}
+
+function updatePreceptorProgress(who){
+  if(who!=='avaliacao')return;
+  const it=curIntern(),el=document.getElementById('avaliacao-progress');if(!it||!el)return;
+  const total=DOMAINS.reduce((n,d)=>n+d.items.length,0);
+  const answered=DOMAINS.reduce((n,d)=>n+d.items.filter(i=>it.precEval[i.id]!==undefined).length,0);
+  const pct=Math.round(answered/total*100);
+  el.innerHTML=`<div class="pb-wrap"><div class="pb-label"><span>Progresso da avaliação</span><span>${answered}/${total}</span></div><div class="pb-bg"><div class="pb verde" style="width:${pct}%"></div></div></div>${it.precEvalCompletedAt?`<div style="font-size:10px;color:var(--verde);margin-top:7px;font-weight:700">✓ Salva em ${new Date(it.precEvalCompletedAt).toLocaleString('pt-BR')}</div>`:''}`;
 }
 
 function confirmAutoaval(){
@@ -1157,7 +1309,16 @@ function confirmAutoaval(){
   if(missing){showToast(`⚠️ Avalie as ${missing} competência${missing>1?'s':''} restante${missing>1?'s':''}.`,'e');return;}
   it.selfEvalCompletedAt=new Date().toISOString();save();updateAutoProgress();showToast('✓ Autoavaliação concluída!','s');
 }
-function confirmPreceptor(){save();showToast('✓ Avaliação do preceptor registrada!','s');}
+function confirmPreceptor(origin='prec'){
+  const it=curIntern();if(!it)return;
+  const missing=DOMAINS.flatMap(d=>d.items).filter(i=>it.precEval[i.id]===undefined).length;
+  if(missing){showToast(`⚠️ Avalie as ${missing} competência${missing>1?'s':''} restante${missing>1?'s':''}.`,'e');return;}
+  if(!it.precGlobal){showToast('⚠️ Informe o conceito global.','e');return;}
+  it.precEvalCompletedAt=new Date().toISOString();
+  save();
+  updatePreceptorProgress(origin);
+  showToast('✓ Avaliação do preceptor salva!','s');
+}
 
 // ============================================================
 // RELATÓRIO
@@ -1225,6 +1386,99 @@ function buildReport(){
     ${gc?`<div class="divider"></div><div style="margin-bottom:12px"><div style="font-size:14px;font-weight:800;margin-bottom:8px">🏅 Conceito Global</div><div style="display:inline-flex;align-items:center;gap:10px;background:rgba(0,0,0,.04);border-radius:10px;padding:12px 16px"><span style="font-size:28px;font-weight:800;color:${concColor[gc]}">${gc}</span><span style="font-size:14px;font-weight:700;color:${concColor[gc]}">${concMap[gc]}</span></div></div>`:''}
     <div class="divider"></div>
     <div style="font-size:10px;color:var(--cinza-e);text-align:center;line-height:1.6">Gerado em ${now}<br>Matriz de Competências do Internato de Pediatria · InternoPed UEA</div>`;
+}
+
+// ============================================================
+// EXPORTAÇÃO CSV — SUBMÓDULO ATUAL
+// ============================================================
+function csvCell(value){
+  let text=String(value??'');
+  if(/^[=+\-@]/.test(text))text="'"+text;
+  return '"'+text.replace(/"/g,'""')+'"';
+}
+
+function nomeArquivo(texto){
+  return String(texto||'turma').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+}
+
+function baixarCsv(nome,cabecalho,linhas){
+  if(!linhas.length){showToast('Não há dados para exportar neste submódulo.','e');return;}
+  const csv='\uFEFF'+[cabecalho,...linhas].map(row=>row.map(csvCell).join(';')).join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=url;link.download=nome;document.body.appendChild(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  showToast('✓ Arquivo exportado!','s');
+}
+
+function idsParaExportar(escopo,selectId){
+  if(escopo==='turma')return Object.keys(APP.interns).sort((a,b)=>APP.interns[a].name.localeCompare(APP.interns[b].name,'pt-BR'));
+  const id=document.getElementById(selectId)?.value||'';
+  return id&&APP.interns[id]?[id]:[];
+}
+
+function diasDaExportacao(ids){
+  const p=APP.program||{};
+  if(p.startDate&&p.endDate)return getWeekdays(p.startDate,p.endDate);
+  const dias=new Set();
+  ids.forEach(id=>Object.keys((APP.interns[id]||{}).attendance||{}).forEach(d=>dias.add(d)));
+  return [...dias].sort();
+}
+
+function calcularFrequenciaExportacao(it,dias){
+  let mP=0,mR=0,aP=0,aR=0;
+  dias.forEach(d=>{const a=(it.attendance||{})[d]||{};if(a.morning==='P'){mP++;mR++;}else if(a.morning==='A')mR++;if(a.afternoon==='P'){aP++;aR++;}else if(a.afternoon==='A')aR++;});
+  return {
+    manha:mR?(mP/mR*100).toFixed(1)+'%':'',
+    tarde:aR?(aP/aR*100).toFixed(1)+'%':'',
+    global:(mR+aR)?((mP+aP)/(mR+aR)*100).toFixed(1)+'%':''
+  };
+}
+
+function textoFrequencia(value){return value==='P'?'Presente':value==='A'?'Falta':'Sem registro'}
+
+function exportarFrequencia(escopo){
+  const ids=idsParaExportar(escopo,'freq-export-interno');
+  if(!ids.length){showToast('Selecione um interno para exportar.','e');return;}
+  const p=APP.program||{},dias=diasDaExportacao(ids);
+  if(!dias.length){showToast('Configure o período do submódulo antes de exportar.','e');return;}
+  const linhas=[];
+  ids.forEach(id=>{
+    const it=APP.interns[id],pct=calcularFrequenciaExportacao(it,dias);
+    dias.forEach(d=>{
+      const a=(it.attendance||{})[d]||{},dt=new Date(d+'T12:00:00');
+      linhas.push([
+        'Submódulo '+(p.submodulo||''),p.preceptorName||'',it.name,it.group||'',fmtBR(d),
+        ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'][dt.getDay()],
+        p.morningName||'Manhã',textoFrequencia(a.morning),p.afternoonName||'Tarde',textoFrequencia(a.afternoon),
+        pct.manha,pct.tarde,pct.global
+      ]);
+    });
+  });
+  const sufixo=escopo==='turma'?'turma':APP.interns[ids[0]].name;
+  baixarCsv(`internoped-frequencia-submodulo-${p.submodulo||'atual'}-${nomeArquivo(sufixo)}.csv`,[
+    'Submódulo','Preceptor','Interno','Grupo','Data','Dia da semana','Cenário manhã','Frequência manhã','Cenário tarde','Frequência tarde','% manhã','% tarde','% global'
+  ],linhas);
+}
+
+function textoAvaliacao(value){return value===undefined?'':value==='NO'?'N/O':String(value)}
+
+function exportarAvaliacao(escopo){
+  const ids=idsParaExportar(escopo,'avaliacao-export-interno');
+  if(!ids.length){showToast('Selecione um interno para exportar.','e');return;}
+  const p=APP.program||{},linhas=[];
+  ids.forEach(id=>{
+    const it=APP.interns[id];
+    DOMAINS.forEach(domain=>domain.items.forEach(item=>linhas.push([
+      'Submódulo '+(p.submodulo||''),p.preceptorName||'',it.name,it.group||'',domain.name,item.id,item.txt,
+      textoAvaliacao((it.selfEval||{})[item.id]),textoAvaliacao((it.precEval||{})[item.id]),it.precGlobal||'',
+      it.selfComments||'',it.precComments||'',it.selfEvalCompletedAt||'',it.precEvalCompletedAt||''
+    ])));
+  });
+  const sufixo=escopo==='turma'?'turma':APP.interns[ids[0]].name;
+  baixarCsv(`internoped-avaliacao-submodulo-${p.submodulo||'atual'}-${nomeArquivo(sufixo)}.csv`,[
+    'Submódulo','Preceptor','Interno','Grupo','Domínio','Código','Competência','Autoavaliação','Avaliação do preceptor','Conceito global','Reflexão do interno','Feedback do preceptor','Autoavaliação concluída em','Avaliação concluída em'
+  ],linhas);
 }
 
 // ============================================================
