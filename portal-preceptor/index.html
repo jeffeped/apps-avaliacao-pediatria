@@ -1,46 +1,362 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#075f91">
   <title>Portal do Preceptor — ResidPed UEA</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
-    :root{--green:#007a4d;--blue:#075f91;--ink:#152238;--muted:#687789;--bg:#f2f5f7;--line:#dce4e8;--red:#b42318}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,sans-serif}.shell{max-width:650px;margin:auto;min-height:100vh;background:var(--bg)}header{background:linear-gradient(135deg,#064f72,#087aa0);color:#fff;padding:24px 22px 18px}.brand{font-size:25px;font-weight:800}.sub{opacity:.9;margin-top:3px}.profile{display:flex;align-items:center;gap:12px;border-top:1px solid #ffffff38;margin-top:18px;padding-top:15px}.profile img{width:42px;height:42px;border-radius:50%;background:#fff}.grow{flex:1}.small{font-size:13px;opacity:.9}.btn-out{border:1px solid #ffffff99;background:transparent;color:#fff;border-radius:9px;padding:9px 13px}.content{padding:18px}.card{background:#fff;border-radius:18px;padding:20px;margin-bottom:15px;box-shadow:0 4px 16px #14344812}.hero{text-align:center;border-left:6px solid var(--green)}h2{font-size:20px;margin:0 0 9px}p{line-height:1.45}.muted{color:var(--muted);font-size:14px}.login{max-width:430px;margin:18vh auto;background:#fff;border-radius:22px;padding:35px 25px;text-align:center;box-shadow:0 12px 36px #1233}.icon{font-size:44px}.login h1{font-size:24px}.error{background:#fff0ef;color:var(--red);padding:12px;border-radius:10px;font-size:13px;margin-top:14px}.task{border-top:5px solid var(--green)}.meta{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px}.tag{background:#e8f4ef;color:#00633f;border-radius:99px;padding:6px 10px;font-weight:700;font-size:12px}.resident{font-size:22px;font-weight:800;margin:14px 0}.choices{display:grid;gap:9px}.choice{width:100%;border:1px solid var(--line);border-radius:11px;background:#fff;padding:13px;text-align:left;font-size:15px;font-weight:700}.choice.selected{border:2px solid var(--green);background:#eaf7f1;color:#00653f}.choice.abs.selected{border-color:#c83b32;background:#fff0ef;color:#9d1b14}textarea{width:100%;height:76px;border:1px solid var(--line);border-radius:10px;padding:11px;margin-top:12px;font:inherit}.submit,.refresh{width:100%;border:0;border-radius:11px;background:var(--green);color:#fff;padding:14px;font-size:16px;font-weight:800;margin-top:12px}.refresh{background:var(--blue)}.done{border-left:5px solid #7c8a96}.status{font-weight:800;color:var(--green)}.empty{text-align:center;padding:28px 18px}.hide{display:none!important}.loading{text-align:center;padding:40px;color:var(--muted)}footer{text-align:center;color:var(--muted);font-size:12px;padding:5px 20px 25px}
+    :root{
+      --green:#007a4d;--green-dark:#005e3b;--green-soft:#e8f5ef;
+      --blue:#075f91;--blue-dark:#064f72;--blue-soft:#e9f3f8;
+      --ink:#152238;--muted:#687789;--bg:#f2f5f7;--line:#dce4e8;
+      --red:#b42318;--red-soft:#fff0ef;--amber:#a15c00;--amber-soft:#fff5df;
+      --white:#fff;--shadow:0 4px 18px rgba(20,52,72,.08)
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:Arial,sans-serif}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    button:disabled{cursor:not-allowed;opacity:.55}
+    button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(7,95,145,.2);outline-offset:2px}
+    .shell{max-width:1180px;margin:auto;min-height:100vh;background:var(--bg)}
+    header{background:linear-gradient(135deg,var(--blue-dark),#087aa0);color:#fff;padding:24px 24px 18px;border-radius:0 0 24px 24px;box-shadow:0 8px 28px rgba(6,79,114,.18)}
+    .brand{font-size:25px;font-weight:800}.sub{opacity:.9;margin-top:3px}
+    .profile{display:flex;align-items:center;gap:12px;border-top:1px solid #ffffff38;margin-top:18px;padding-top:15px}
+    .profile img{width:42px;height:42px;border-radius:50%;background:#fff;object-fit:cover}
+    .grow{flex:1;min-width:0}.small{font-size:13px;opacity:.9;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .btn-out{border:1px solid #ffffff99;background:transparent;color:#fff;border-radius:9px;padding:9px 13px}
+    .top-tabs{display:flex;gap:8px;padding:14px 24px 0}
+    .top-tabs button{border:1px solid var(--line);background:#fff;color:var(--muted);padding:11px 16px;border-radius:11px;font-weight:800}
+    .top-tabs button.active{background:var(--blue);border-color:var(--blue);color:#fff}
+    .content{padding:18px 24px 28px}
+    .view.hide,.hide{display:none!important}
+    .card{background:#fff;border-radius:18px;padding:20px;margin-bottom:15px;box-shadow:var(--shadow);border:1px solid rgba(220,228,232,.72)}
+    .hero{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;border-left:6px solid var(--green)}
+    .hero-copy{max-width:760px}.eyebrow{color:var(--green);font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px}
+    h1,h2,h3,p{margin-top:0}h2{font-size:21px;margin-bottom:8px}h3{font-size:16px;margin-bottom:10px}
+    .muted{color:var(--muted);font-size:14px;line-height:1.5}.hero .muted{margin-bottom:0}
+    .primary,.secondary,.refresh,.submit{border:0;border-radius:11px;padding:12px 16px;font-weight:800}
+    .primary,.submit{background:var(--green);color:#fff}.primary:hover,.submit:hover{background:var(--green-dark)}
+    .secondary,.refresh{background:var(--blue);color:#fff}.secondary:hover,.refresh:hover{background:var(--blue-dark)}
+    .filters{display:grid;grid-template-columns:.72fr 1.35fr 1fr 1fr;gap:12px;align-items:end}
+    .field label{display:block;font-size:12px;font-weight:800;margin:0 0 6px;color:#445267}
+    .field select,.field input{width:100%;height:43px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);padding:0 11px}
+    .filter-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+    .check{display:flex;align-items:center;gap:8px;color:#445267;font-size:13px;font-weight:700}.check input{width:17px;height:17px;accent-color:var(--green)}
+    .filter-buttons{display:flex;gap:8px}.filter-buttons button{min-height:42px}
+    .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:15px}
+    .metric{background:#fff;border:1px solid var(--line);border-radius:15px;padding:16px;box-shadow:var(--shadow)}
+    .metric-label{font-size:12px;color:var(--muted);font-weight:700}.metric-value{font-size:27px;font-weight:900;margin-top:5px;color:var(--blue)}
+    .metric.open .metric-value{color:var(--amber)}.metric.alert .metric-value{color:var(--red)}.metric.good .metric-value{color:var(--green)}
+    .list-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:15px}
+    .list-head h2{margin:0}.list-meta{font-size:13px;color:var(--muted);margin-top:4px}
+    .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:13px}
+    table{width:100%;border-collapse:collapse;min-width:900px;background:#fff}
+    th{background:#f7f9fa;color:#536174;text-transform:uppercase;letter-spacing:.04em;font-size:11px;text-align:left;padding:12px;border-bottom:1px solid var(--line)}
+    td{font-size:13px;padding:14px 12px;border-bottom:1px solid #e8edf0;vertical-align:top}
+    tbody tr:last-child td{border-bottom:0}.resident-name{font-weight:800;font-size:14px}.resident-year{color:var(--muted);font-size:12px;margin-top:3px}
+    .date-main,.time-main{font-weight:800}.cell-note{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.35}
+    .distance{display:inline-flex;margin-top:6px;padding:4px 7px;border-radius:7px;font-size:11px;font-weight:800;background:#eef2f4;color:#59687a}
+    .distance.ok{background:var(--green-soft);color:var(--green-dark)}.distance.out{background:var(--red-soft);color:var(--red)}
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:99px;font-size:11px;font-weight:900;white-space:nowrap}
+    .pill.done{background:var(--green-soft);color:var(--green-dark)}.pill.open{background:var(--amber-soft);color:var(--amber)}.pill.out{background:var(--red-soft);color:var(--red)}.pill.orphan{background:#eef2f4;color:#59687a}
+    .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+    .loading{display:flex;align-items:center;justify-content:center;min-height:180px;color:var(--muted);font-size:14px}
+    .spinner{width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;margin-right:10px}@keyframes spin{to{transform:rotate(360deg)}}
+    .empty{text-align:center;padding:36px 18px}.empty-icon{font-size:34px;margin-bottom:8px}.empty h3{margin-bottom:6px}.empty p{margin-bottom:0}
+    .error{background:var(--red-soft);color:var(--red);padding:13px;border-radius:10px;font-size:13px;margin-top:14px}
+    .login{max-width:430px;margin:18vh auto;background:#fff;border-radius:22px;padding:35px 25px;text-align:center;box-shadow:0 12px 36px #1233}
+    .login-icon{font-size:44px}.login h1{font-size:24px;margin-bottom:8px}
+    .task{border-top:5px solid var(--green)}.meta{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px}.tag{background:var(--green-soft);color:#00633f;border-radius:99px;padding:6px 10px;font-weight:700;font-size:12px}.resident{font-size:22px;font-weight:800;margin:14px 0}.choices{display:grid;gap:9px}.choice{width:100%;border:1px solid var(--line);border-radius:11px;background:#fff;padding:13px;text-align:left;font-size:15px;font-weight:700}.choice.selected{border:2px solid var(--green);background:#eaf7f1;color:#00653f}.choice.abs.selected{border-color:#c83b32;background:var(--red-soft);color:#9d1b14}textarea{width:100%;height:76px;border:1px solid var(--line);border-radius:10px;padding:11px;margin-top:12px}.submit,.refresh{width:100%;font-size:15px;margin-top:12px}.done-card{border-left:5px solid #7c8a96}.status{font-weight:800;color:var(--green)}
+    footer{text-align:center;color:var(--muted);font-size:12px;padding:5px 20px 25px}
+    .toast{position:fixed;right:22px;bottom:22px;z-index:20;background:var(--ink);color:#fff;border-radius:11px;padding:12px 16px;font-size:13px;box-shadow:0 10px 30px #1522383b;transform:translateY(25px);opacity:0;pointer-events:none;transition:.2s}.toast.show{transform:none;opacity:1}.toast.error-toast{background:var(--red)}
+    @media(max-width:780px){
+      header{border-radius:0;padding:20px 16px 16px}.brand{font-size:22px}.top-tabs{padding:12px 14px 0}.top-tabs button{flex:1;padding:10px 8px;font-size:13px}.content{padding:14px}.hero{display:block;padding:17px}.hero .secondary{width:100%;margin-top:14px}.filters{grid-template-columns:1fr 1fr}.summary{grid-template-columns:1fr 1fr}.filter-actions{align-items:flex-start;flex-direction:column}.filter-buttons{width:100%}.filter-buttons button{flex:1}.list-head{align-items:flex-start;flex-direction:column}.list-head .primary{width:100%}.small{white-space:normal}.profile{align-items:flex-start}
+      .table-wrap{overflow:visible;border:0}.table-wrap table{min-width:0;background:transparent}.table-wrap thead{display:none}.table-wrap tbody{display:grid;gap:10px}.table-wrap tr{display:grid;grid-template-columns:1fr 1fr;background:#fff;border:1px solid var(--line);border-radius:13px;padding:3px 12px;box-shadow:0 3px 12px rgba(20,52,72,.05)}.table-wrap td{display:block;padding:11px 5px;border-bottom:1px solid #edf1f3}.table-wrap td::before{content:attr(data-label);display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.04em;font-weight:800;margin-bottom:5px}.table-wrap td:first-child,.table-wrap td:nth-child(2),.table-wrap td:last-child{grid-column:1/-1}.table-wrap td:nth-last-child(-n+1){border-bottom:0}
+    }
+    @media(max-width:480px){.filters{grid-template-columns:1fr}.summary{gap:8px}.metric{padding:13px}.metric-value{font-size:23px}.profile img{width:36px;height:36px}.btn-out{padding:8px 10px}.table-wrap tr{grid-template-columns:1fr}.table-wrap td{grid-column:1/-1}}
   </style>
 </head>
-<body><div class="shell">
+<body>
+<div class="shell">
   <section id="login" class="login">
-    <div class="icon">🩺</div><h1>Portal do Preceptor</h1>
+    <div class="login-icon">🩺</div>
+    <h1>Portal do Preceptor</h1>
     <p class="muted">Entre com a conta Google cadastrada pela coordenação. O acesso é individual.</p>
-    <div id="googleBtn" style="display:flex;justify-content:center;margin-top:22px"></div><div id="loginError"></div>
+    <div id="googleBtn" style="display:flex;justify-content:center;margin-top:22px"></div>
+    <div id="loginError"></div>
   </section>
+
   <main id="app" class="hide">
-    <header><div class="brand">ResidPed UEA</div><div class="sub">Portal do Preceptor</div>
-      <div class="profile"><img id="photo" alt=""><div class="grow"><b id="name"></b><div class="small" id="assignments"></div></div><button class="btn-out" onclick="logout()">Sair</button></div>
+    <header>
+      <div class="brand">ResidPed UEA</div>
+      <div class="sub">Portal do Preceptor</div>
+      <div class="profile">
+        <img id="photo" alt="Foto do preceptor">
+        <div class="grow"><b id="name"></b><div class="small" id="assignments"></div></div>
+        <button class="btn-out" onclick="logout()">Sair</button>
+      </div>
     </header>
-    <div class="content">
-      <div class="card hero"><h2>Validação aleatória de frequência</h2><p class="muted">Em cada dia, até três residentes do programa são sorteados. Você verá somente as verificações atribuídas a você e já liberadas pelo horário.</p></div>
-      <div id="tasks" class="loading">Verificando solicitações…</div>
-      <button class="refresh" onclick="loadTasks()">↻ Atualizar</button>
-    </div><footer>Sem fotos e sem rastreamento. A resposta registra o preceptor e o horário da validação.</footer>
+
+    <nav class="top-tabs" aria-label="Áreas do portal">
+      <button id="tab-pontos" class="active" onclick="showView('pontos')">Painel de ponto</button>
+      <button id="tab-validacoes" onclick="showView('validacoes')">Validações</button>
+    </nav>
+
+    <section id="view-pontos" class="content view">
+      <div class="card hero">
+        <div class="hero-copy">
+          <div class="eyebrow">Acompanhamento de presença</div>
+          <h2>Check-ins dos residentes</h2>
+          <p class="muted">Consulte entradas e saídas registradas na planilha Pontos. A visualização respeita os anos vinculados ao seu acesso.</p>
+        </div>
+        <button class="secondary" onclick="loadPontos()">↻ Atualizar dados</button>
+      </div>
+
+      <div class="card">
+        <div class="filters">
+          <div class="field"><label for="filterAno">Ano</label><select id="filterAno" onchange="updateResidentOptions()"><option value="">Todos</option></select></div>
+          <div class="field"><label for="filterResidente">Residente</label><select id="filterResidente"><option value="">Todos os residentes</option></select></div>
+          <div class="field"><label for="filterInicio">Período inicial</label><input id="filterInicio" type="date"></div>
+          <div class="field"><label for="filterFim">Período final</label><input id="filterFim" type="date"></div>
+        </div>
+        <div class="filter-actions">
+          <label class="check"><input id="filterAbertos" type="checkbox" onchange="renderPontos()"> Mostrar somente registros em aberto</label>
+          <div class="filter-buttons"><button class="secondary" onclick="clearPointFilters()">Limpar</button><button class="primary" onclick="loadPontos()">Aplicar filtros</button></div>
+        </div>
+      </div>
+
+      <div id="pointSummary" class="summary" aria-live="polite">
+        <div class="metric"><div class="metric-label">Registros no período</div><div class="metric-value">—</div></div>
+        <div class="metric open"><div class="metric-label">Em aberto</div><div class="metric-value">—</div></div>
+        <div class="metric alert"><div class="metric-label">Fora do raio</div><div class="metric-value">—</div></div>
+        <div class="metric good"><div class="metric-label">Distância média</div><div class="metric-value">—</div></div>
+      </div>
+
+      <div class="card">
+        <div class="list-head">
+          <div><h2>Lista de pontos</h2><div id="pointMeta" class="list-meta">Carregando registros…</div></div>
+          <button id="exportButton" class="primary" onclick="exportPontos()" disabled>↓ Exportar lista (CSV)</button>
+        </div>
+        <div id="pointList" class="loading"><span class="spinner"></span>Consultando a planilha Pontos…</div>
+      </div>
+    </section>
+
+    <section id="view-validacoes" class="content view hide">
+      <div class="card hero">
+        <div class="hero-copy"><div class="eyebrow">Frequência</div><h2>Validação aleatória</h2><p class="muted">Em cada dia, até três residentes são sorteados. Você verá somente as verificações atribuídas a você e já liberadas pelo horário.</p></div>
+      </div>
+      <div id="tasks" class="loading"><span class="spinner"></span>Verificando solicitações…</div>
+      <button class="refresh" onclick="loadTasks()">↻ Atualizar validações</button>
+    </section>
+    <footer>Os dados exibidos vêm da planilha Pontos. Não há rastreamento contínuo de localização.</footer>
   </main>
-</div><script>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
 const CLIENT_ID='439450410940-2teog3fo9flv2hvidgop73dtsuj4okp2.apps.googleusercontent.com';
 const API='https://script.google.com/macros/s/AKfycbx0ho_ppfDeuJGQ6NMkN47vGEMsPCyoIy-K3CXLhmdMRHtV7paA96Z_Xqq8fXm_UQDA/exec';
-let token='',profile=null,selected={};
-function api(tipo,dados={}){return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({tipo:tipo,token:token,dados:dados})}).then(r=>r.json()).then(r=>{if(!r.ok)throw new Error(r.erro||'Não foi possível concluir.');return r})}
+let token='',profile=null,selected={},currentView='pontos',tasksLoaded=false;
+let pointCatalog={anos:[],residentes:[]},pointJourneys=[];
+
+function api(tipo,dados={}){
+  return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({tipo:tipo,token:token,dados:dados})})
+    .then(r=>r.json()).then(r=>{if(!r.ok)throw new Error(r.erro||'Não foi possível concluir.');return r});
+}
+
 function decodeJwt(t){try{return JSON.parse(decodeURIComponent(escape(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')))))}catch(e){return{}}}
 async function credential(resp){token=resp.credential;sessionStorage.setItem('preceptor_token',token);await enter()}
-async function enter(){try{const r=await api('perfil_preceptor');profile=r.perfil;const claims=decodeJwt(token);document.getElementById('name').textContent=profile.nome;document.getElementById('photo').src=claims.picture||'';document.getElementById('assignments').textContent=profile.atribuicoes.map(a=>a.ano+' · '+a.modulo).join(' | ');document.getElementById('login').classList.add('hide');document.getElementById('app').classList.remove('hide');loadTasks()}catch(e){sessionStorage.removeItem('preceptor_token');showLoginError(e.message)}}
+
+async function enter(){
+  try{
+    const r=await api('perfil_preceptor');
+    profile=r.perfil;
+    const claims=decodeJwt(token);
+    document.getElementById('name').textContent=profile.nome;
+    document.getElementById('photo').src=claims.picture||'';
+    document.getElementById('assignments').textContent=profile.atribuicoes.map(a=>a.ano+' · '+a.modulo).join(' | ');
+    document.getElementById('login').classList.add('hide');
+    document.getElementById('app').classList.remove('hide');
+    setDefaultPeriod();
+    await loadPontos();
+  }catch(e){sessionStorage.removeItem('preceptor_token');showLoginError(e.message)}
+}
+
 function showLoginError(msg){document.getElementById('loginError').innerHTML='<div class="error">'+esc(msg)+'</div>'}
-async function loadTasks(){const box=document.getElementById('tasks');box.className='loading';box.textContent='Verificando solicitações…';try{const r=await api('validacoes_preceptor');render(r.validacoes)}catch(e){box.className='card error';box.textContent=e.message}}
-function render(items){const box=document.getElementById('tasks');box.className='';if(!items.length){box.innerHTML='<div class="card empty"><div class="icon">✓</div><h2>Nenhuma validação disponível agora</h2><p class="muted">Novas solicitações podem aparecer nos horários sorteados entre 9h e 17h.</p></div>';return}box.innerHTML=items.map(v=>v.status==='Pendente'?task(v):done(v)).join('')}
-function task(v){return '<div class="card task"><div class="meta"><span class="tag">'+esc(v.hora)+'</span><span class="tag">'+esc(v.ano)+'</span><span class="tag">'+esc(v.modulo)+'</span></div><div class="muted">Confirme a situação de:</div><div class="resident">'+esc(v.residente)+'</div><div class="choices">'+choice(v.id,'Presente','✓ Presente','')+choice(v.id,'Ausente','× Ausente','abs')+choice(v.id,'Atividade externa autorizada','↗ Atividade externa autorizada','')+choice(v.id,'Não foi possível verificar','? Não foi possível verificar','')+'</div><textarea id="obs-'+v.id+'" placeholder="Observação opcional"></textarea><button class="submit" onclick="submitTask(\''+v.id+'\',this)">Enviar validação</button></div>'}
-function choice(id,value,label,cls){return '<button class="choice '+cls+'" data-id="'+id+'" data-value="'+value+'" onclick="choose(this)">'+label+'</button>'}
-function done(v){return '<div class="card done"><div class="meta"><span class="tag">'+esc(v.hora)+'</span><span class="tag">'+esc(v.ano+' · '+v.modulo)+'</span></div><b>'+esc(v.residente)+'</b><p class="status">'+esc(v.status)+'</p><div class="muted">Respondido em '+esc(v.respondidoEm)+'</div></div>'}
-function choose(btn){document.querySelectorAll('.choice[data-id="'+btn.dataset.id+'"]').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');selected[btn.dataset.id]=btn.dataset.value}
-async function submitTask(id,btn){if(!selected[id]){alert('Selecione uma opção.');return}btn.disabled=true;btn.textContent='Enviando…';try{await api('responder_validacao',{id:id,status:selected[id],observacao:document.getElementById('obs-'+id).value});await loadTasks()}catch(e){alert(e.message);btn.disabled=false;btn.textContent='Enviar validação'}}
+
+function showView(view){
+  currentView=view;
+  document.querySelectorAll('.view').forEach(el=>el.classList.add('hide'));
+  document.querySelectorAll('.top-tabs button').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+view).classList.remove('hide');
+  document.getElementById('tab-'+view).classList.add('active');
+  if(view==='validacoes'&&!tasksLoaded)loadTasks();
+}
+
+function manausDate(){
+  const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Manaus',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+  const value={};parts.forEach(p=>value[p.type]=p.value);
+  return value.year+'-'+value.month+'-'+value.day;
+}
+
+function setDefaultPeriod(){
+  const today=manausDate();
+  document.getElementById('filterInicio').value=today.slice(0,8)+'01';
+  document.getElementById('filterFim').value=today;
+}
+
+async function loadPontos(){
+  const inicio=document.getElementById('filterInicio').value;
+  const fim=document.getElementById('filterFim').value;
+  if(inicio&&fim&&inicio>fim){toast('A data inicial deve ser anterior à data final.',true);return}
+  const box=document.getElementById('pointList');
+  box.className='loading';box.innerHTML='<span class="spinner"></span>Consultando a planilha Pontos…';
+  document.getElementById('exportButton').disabled=true;
+  try{
+    const r=await api('pontos_preceptor',{ano:document.getElementById('filterAno').value,residente:document.getElementById('filterResidente').value,dataInicio:inicio,dataFim:fim});
+    pointCatalog={anos:r.anos||[],residentes:r.residentes||[]};
+    pointJourneys=r.jornadas||[];
+    updateYearOptions();
+    updateResidentOptions();
+    renderPontos();
+  }catch(e){
+    pointJourneys=[];renderPointSummary([]);
+    box.className='error';box.textContent=e.message;
+    document.getElementById('pointMeta').textContent='Não foi possível carregar a lista.';
+    toast(e.message,true);
+  }
+}
+
+function updateYearOptions(){
+  const select=document.getElementById('filterAno'),current=select.value;
+  select.innerHTML='<option value="">Todos</option>'+pointCatalog.anos.map(ano=>'<option value="'+escAttr(ano)+'">'+esc(ano)+'</option>').join('');
+  if(pointCatalog.anos.includes(current))select.value=current;
+}
+
+function updateResidentOptions(){
+  const select=document.getElementById('filterResidente'),current=select.value,ano=document.getElementById('filterAno').value;
+  const residentes=pointCatalog.residentes.filter(r=>!ano||r.ano===ano);
+  select.innerHTML='<option value="">Todos os residentes</option>'+residentes.map(r=>'<option value="'+escAttr(r.nome)+'">'+esc(r.nome)+' · '+esc(r.ano)+'</option>').join('');
+  if(residentes.some(r=>r.nome===current))select.value=current;
+}
+
+function clearPointFilters(){
+  document.getElementById('filterAno').value='';
+  updateResidentOptions();
+  document.getElementById('filterResidente').value='';
+  document.getElementById('filterAbertos').checked=false;
+  setDefaultPeriod();
+  loadPontos();
+}
+
+function visibleJourneys(){return document.getElementById('filterAbertos').checked?pointJourneys.filter(j=>j.aberto):pointJourneys}
+
+function renderPontos(){
+  const items=visibleJourneys(),box=document.getElementById('pointList');
+  renderPointSummary(items);
+  document.getElementById('pointMeta').textContent=items.length===1?'1 registro encontrado':items.length+' registros encontrados';
+  document.getElementById('exportButton').disabled=!items.length;
+  if(!items.length){
+    box.className='empty';
+    box.innerHTML='<div class="empty-icon">📍</div><h3>Nenhum ponto encontrado</h3><p class="muted">Ajuste os filtros ou consulte outro período.</p>';
+    return;
+  }
+  box.className='table-wrap';
+  box.innerHTML='<table><thead><tr><th>Residente</th><th>Data e local</th><th>Entrada</th><th>Saída</th><th>Situação</th></tr></thead><tbody>'+items.map(pointRow).join('')+'</tbody></table>';
+}
+
+function pointRow(j){
+  const entrada=j.entrada,saida=j.saida,base=entrada||saida||{};
+  return '<tr>'+
+    '<td data-label="Residente"><div class="resident-name">'+esc(j.residente)+'</div><div class="resident-year">'+esc(j.ano)+'</div></td>'+
+    '<td data-label="Data e local"><div class="date-main">'+formatDate(base.data)+'</div><div class="cell-note">'+esc(base.local||'Local não informado')+'</div></td>'+
+    '<td data-label="Entrada">'+recordCell(entrada,'Entrada não registrada')+'</td>'+
+    '<td data-label="Saída">'+recordCell(saida,j.aberto?'Aguardando check-out':'Saída não vinculada')+'</td>'+
+    '<td data-label="Situação">'+statusPill(j)+'</td></tr>';
+}
+
+function recordCell(record,empty){
+  if(!record)return '<div class="cell-note">'+esc(empty)+'</div>';
+  const accuracy=record.precisao==null?'':'Precisão do GPS: '+formatMeters(record.precisao);
+  return '<div class="time-main">'+esc(formatTime(record.hora))+'</div><span class="distance '+distanceClass(record)+'">'+distanceText(record)+'</span>'+(accuracy?'<div class="cell-note">'+esc(accuracy)+'</div>':'');
+}
+
+function journeyOutside(j){return [j.entrada,j.saida].filter(Boolean).some(r=>r.dentroDoRaio===false)}
+function statusPill(j){
+  if(j.aberto)return '<span class="pill open"><span class="dot"></span>Em aberto</span>';
+  if(!j.entrada)return '<span class="pill orphan"><span class="dot"></span>Saída sem entrada</span>';
+  if(journeyOutside(j))return '<span class="pill out"><span class="dot"></span>Fora do raio</span>';
+  return '<span class="pill done"><span class="dot"></span>Concluído</span>';
+}
+
+function distanceClass(r){return r.dentroDoRaio===true?'ok':r.dentroDoRaio===false?'out':''}
+function distanceText(r){return r.distancia==null?'Distância não calculada':formatMeters(r.distancia)+' do local'}
+function formatMeters(value){const n=Number(value);return n>=1000?(n/1000).toLocaleString('pt-BR',{maximumFractionDigits:2})+' km':Math.round(n).toLocaleString('pt-BR')+' m'}
+function formatTime(value){const match=String(value||'').match(/(\d{1,2}):(\d{2})/);return match?match[1].padStart(2,'0')+':'+match[2]:'—'}
+function formatDate(value){if(!/^\d{4}-\d{2}-\d{2}$/.test(String(value||'')))return esc(value||'—');const p=value.split('-');return p[2]+'/'+p[1]+'/'+p[0]}
+
+function renderPointSummary(items){
+  const open=items.filter(j=>j.aberto).length;
+  const outside=items.filter(journeyOutside).length;
+  const distances=[];items.forEach(j=>[j.entrada,j.saida].filter(Boolean).forEach(r=>{if(r.distancia!=null)distances.push(Number(r.distancia))}));
+  const average=distances.length?formatMeters(distances.reduce((a,b)=>a+b,0)/distances.length):'—';
+  document.getElementById('pointSummary').innerHTML=
+    metric('Registros no período',items.length,'')+metric('Em aberto',open,'open')+metric('Fora do raio',outside,'alert')+metric('Distância média',average,'good');
+}
+
+function metric(label,value,cls){return '<div class="metric '+cls+'"><div class="metric-label">'+esc(label)+'</div><div class="metric-value">'+esc(value)+'</div></div>'}
+
+function exportPontos(){
+  const items=visibleJourneys();if(!items.length){toast('Não há registros para exportar.',true);return}
+  const headers=['Residente','Ano','Data','Entrada','Saída','Situação','Local da entrada','Distância da entrada (m)','Dentro do raio na entrada','Precisão GPS entrada (m)','Local da saída','Distância da saída (m)','Dentro do raio na saída','Precisão GPS saída (m)','Raio permitido (m)'];
+  const rows=items.map(j=>{
+    const e=j.entrada||{},s=j.saida||{};
+    return [j.residente,j.ano,(e.data||s.data||''),formatTime(e.hora),formatTime(s.hora),statusText(j),e.local||'',numberOrBlank(e.distancia),radiusText(e.dentroDoRaio),numberOrBlank(e.precisao),s.local||'',numberOrBlank(s.distancia),radiusText(s.dentroDoRaio),numberOrBlank(s.precisao),numberOrBlank(e.raioPermitido!=null?e.raioPermitido:s.raioPermitido)];
+  });
+  const csv='\ufeff'+[headers,...rows].map(row=>row.map(csvCell).join(';')).join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=url;link.download='pontos-residentes-'+manausDate()+'.csv';document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);
+  toast('Lista exportada com sucesso.');
+}
+
+function statusText(j){return j.aberto?'Em aberto':!j.entrada?'Saída sem entrada':journeyOutside(j)?'Fora do raio':'Concluído'}
+function numberOrBlank(v){return v==null?'':Number(v).toFixed(2).replace('.',',')}
+function radiusText(v){return v===true?'Sim':v===false?'Não':'Não configurado'}
+function csvCell(value){let text=String(value??'');if(/^[=+\-@]/.test(text))text="'"+text;return '"'+text.replace(/"/g,'""')+'"'}
+
+async function loadTasks(){
+  const box=document.getElementById('tasks');box.className='loading';box.innerHTML='<span class="spinner"></span>Verificando solicitações…';
+  try{const r=await api('validacoes_preceptor');tasksLoaded=true;renderTasks(r.validacoes)}catch(e){box.className='card error';box.textContent=e.message}
+}
+
+function renderTasks(items){
+  const box=document.getElementById('tasks');box.className='';
+  if(!items.length){box.innerHTML='<div class="card empty"><div class="empty-icon">✓</div><h2>Nenhuma validação disponível agora</h2><p class="muted">Novas solicitações podem aparecer nos horários sorteados entre 9h e 17h.</p></div>';return}
+  box.innerHTML=items.map(v=>v.status==='Pendente'?taskCard(v):doneCard(v)).join('');
+}
+
+function taskCard(v){return '<div class="card task"><div class="meta"><span class="tag">'+esc(v.hora)+'</span><span class="tag">'+esc(v.ano)+'</span><span class="tag">'+esc(v.modulo)+'</span></div><div class="muted">Confirme a situação de:</div><div class="resident">'+esc(v.residente)+'</div><div class="choices">'+choice(v.id,'Presente','✓ Presente','')+choice(v.id,'Ausente','× Ausente','abs')+choice(v.id,'Atividade externa autorizada','↗ Atividade externa autorizada','')+choice(v.id,'Não foi possível verificar','? Não foi possível verificar','')+'</div><textarea id="obs-'+escAttr(v.id)+'" placeholder="Observação opcional"></textarea><button class="submit" onclick="submitTask(\''+jsString(v.id)+'\',this)">Enviar validação</button></div>'}
+function choice(id,value,label,cls){return '<button class="choice '+cls+'" data-id="'+escAttr(id)+'" data-value="'+escAttr(value)+'" onclick="choose(this)">'+esc(label)+'</button>'}
+function doneCard(v){return '<div class="card done-card"><div class="meta"><span class="tag">'+esc(v.hora)+'</span><span class="tag">'+esc(v.ano+' · '+v.modulo)+'</span></div><b>'+esc(v.residente)+'</b><p class="status">'+esc(v.status)+'</p><div class="muted">Respondido em '+esc(v.respondidoEm)+'</div></div>'}
+function choose(btn){document.querySelectorAll('.choice[data-id="'+CSS.escape(btn.dataset.id)+'"]').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');selected[btn.dataset.id]=btn.dataset.value}
+async function submitTask(id,btn){if(!selected[id]){toast('Selecione uma opção.',true);return}btn.disabled=true;btn.textContent='Enviando…';try{await api('responder_validacao',{id:id,status:selected[id],observacao:document.getElementById('obs-'+id).value});await loadTasks();toast('Validação enviada.')}catch(e){toast(e.message,true);btn.disabled=false;btn.textContent='Enviar validação'}}
+
 function logout(){token='';profile=null;sessionStorage.removeItem('preceptor_token');google.accounts.id.disableAutoSelect();location.reload()}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-window.onload=()=>{google.accounts.id.initialize({client_id:CLIENT_ID,callback:credential});google.accounts.id.renderButton(document.getElementById('googleBtn'),{theme:'outline',size:'large',text:'signin_with',locale:'pt-BR',width:300});const saved=sessionStorage.getItem('preceptor_token');if(saved){token=saved;enter()}setInterval(()=>{if(token)loadTasks()},60000)};
-  </script></body></html>
+function escAttr(s){return esc(s)}
+function jsString(s){return String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r/g,'').replace(/\n/g,'\\n')}
+function toast(message,isError=false){const el=document.getElementById('toast');el.textContent=message;el.classList.toggle('error-toast',isError);el.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove('show'),3200)}
+
+window.onload=()=>{
+  google.accounts.id.initialize({client_id:CLIENT_ID,callback:credential});
+  google.accounts.id.renderButton(document.getElementById('googleBtn'),{theme:'outline',size:'large',text:'signin_with',locale:'pt-BR',width:300});
+  const saved=sessionStorage.getItem('preceptor_token');if(saved){token=saved;enter()}
+  setInterval(()=>{if(token&&currentView==='validacoes')loadTasks()},60000);
+};
+</script>
+</body>
+</html>
