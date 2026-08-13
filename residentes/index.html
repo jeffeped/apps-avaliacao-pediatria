@@ -845,10 +845,12 @@ textarea{resize:none;height:80px}
   </div>
 
   <div class="card">
-    <div class="card-title">Portal dos preceptores</div>
-    <div class="fg"><label>Um vínculo por linha</label><textarea id="cfg-preceptores" style="height:130px" placeholder="Nome;email@gmail.com;R1;Nome exato do módulo"></textarea></div>
-    <button class="btn btn-primary" onclick="salvarPreceptoresPortal()">Salvar e sincronizar preceptores</button>
-    <div class="gps-note">Repita o mesmo preceptor em linhas diferentes se ele acompanhar mais de um módulo. O nome do módulo deve ser igual ao configurado para o residente.</div>
+    <div class="card-title">👨‍🏫 Professores/preceptores</div>
+    <div class="gps-note" style="margin-bottom:12px">Importe um arquivo .txt ou .csv com uma linha por vínculo no formato:<br><strong>Nome;E-mail Google;Ano;Nome exato do módulo</strong></div>
+    <button class="btn btn-primary" onclick="document.getElementById('import-preceptores-file').click()">📥 Importar professores/preceptores</button>
+    <input id="import-preceptores-file" type="file" accept=".txt,.csv,text/plain,text/csv" hidden onchange="importarPreceptoresArquivo(this)">
+    <textarea id="cfg-preceptores" hidden></textarea>
+    <div id="preceptores-import-status" class="gps-note" style="margin-top:10px">Nenhum professor/preceptor importado.</div>
   </div>
 
   <div class="card">
@@ -1779,12 +1781,50 @@ function restoreConfig() {
     document.getElementById('cfg-'+yr+'-m').value=p.morning||'';
     document.getElementById('cfg-'+yr+'-t').value=p.afternoon||'';
   });
+  atualizarStatusPreceptoresImportados();
 }
 
-async function salvarPreceptoresPortal() {
-  saveConfig();
-  await sincronizarAuto('residentes', APP);
-  showToast('Preceptores sincronizados','s');
+function atualizarStatusPreceptoresImportados() {
+  const el=document.getElementById('preceptores-import-status');if(!el)return;
+  const total=String(APP.preceptores||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean).length;
+  el.textContent=total?`${total} vínculo(s) de professor/preceptor importado(s).`:'Nenhum professor/preceptor importado.';
+}
+
+function importarPreceptoresArquivo(input) {
+  const file=input.files&&input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async()=>{
+    try {
+      const linhas=String(reader.result||'').replace(/^\uFEFF/,'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+      const validos=[],erros=[],chaves=new Set();
+      linhas.forEach((linha,idx)=>{
+        const partes=linha.split(';').map(x=>x.trim());
+        const nome=partes[0]||'',email=(partes[1]||'').toLowerCase(),ano=(partes[2]||'').toUpperCase(),modulo=partes.slice(3).join(';').trim();
+        if(idx===0&&/^nome/i.test(nome)&&/e-?mail/i.test(email))return;
+        if(!nome){erros.push(`Linha ${idx+1}: nome ausente`);return}
+        if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){erros.push(`Linha ${idx+1}: e-mail Google inválido`);return}
+        if(!['R1','R2','R3'].includes(ano)){erros.push(`Linha ${idx+1}: use R1, R2 ou R3`);return}
+        if(!modulo){erros.push(`Linha ${idx+1}: módulo ausente`);return}
+        const configurado=((APP.programas||{})[ano]||{}).moduloName||'';
+        if(configurado&&configurado.trim().toLowerCase()!==modulo.toLowerCase()){erros.push(`Linha ${idx+1}: o módulo de ${ano} deve ser "${configurado}"`);return}
+        const moduloFinal=configurado||modulo,chave=[email,ano,moduloFinal.toLowerCase()].join('|');
+        if(chaves.has(chave)){erros.push(`Linha ${idx+1}: vínculo duplicado`);return}
+        chaves.add(chave);validos.push({nome,email,ano,modulo:moduloFinal});
+      });
+      if(erros.length){showToast(erros[0]+(erros.length>1?` (+${erros.length-1} erro(s))`:''),'e');return}
+      if(!validos.length){showToast('Nenhum professor/preceptor válido no arquivo','e');return}
+      const resumo=validos.slice(0,8).map(r=>`${r.ano} · ${r.nome} · ${r.modulo}`).join('\n');
+      const restante=validos.length>8?`\n... e mais ${validos.length-8}`:'';
+      if(!confirm(`Importar ${validos.length} vínculo(s) de professor/preceptor?\n\n${resumo}${restante}\n\nA lista atual será substituída.`))return;
+      const texto=validos.map(r=>[r.nome,r.email,r.ano,r.modulo].join(';')).join('\n');
+      document.getElementById('cfg-preceptores').value=texto;APP.preceptores=texto;saveApp();atualizarStatusPreceptoresImportados();
+      await sincronizarAuto('preceptores',{preceptores:texto});
+      showToast(`✓ ${validos.length} vínculo(s) importado(s)`,'s');
+    } catch(e) { showToast('Não foi possível ler o arquivo de professores/preceptores','e'); }
+    finally { input.value=''; }
+  };
+  reader.onerror=()=>{showToast('Não foi possível ler o arquivo','e');input.value=''};
+  reader.readAsText(file,'UTF-8');
 }
 
 function recalcFim(yr) {
