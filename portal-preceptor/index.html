@@ -38,6 +38,7 @@
     .top-tabs{display:flex;gap:8px;padding:14px 24px 0}
     .top-tabs button{border:1px solid var(--line);background:#fff;color:var(--muted);padding:11px 16px;border-radius:11px;font-weight:800}
     .top-tabs button.active{background:var(--blue);border-color:var(--blue);color:#fff}
+    .eval-domain{padding:14px 0;border-bottom:1px solid var(--line)}.eval-domain:last-child{border-bottom:0}.eval-domain h3{margin:0 0 10px;color:var(--blue);font-size:15px}.eval-item{padding:11px 0;border-top:1px solid #edf1f3}.eval-item label{display:block;font-size:13px;line-height:1.4;margin-bottom:7px}.eval-score{display:flex;align-items:center;gap:12px}.eval-score input{flex:1;accent-color:var(--green)}.eval-score b{width:30px;text-align:center;color:var(--green);font-size:17px}.final-score{display:flex;align-items:center;justify-content:space-between;background:var(--green-soft);border-radius:13px;padding:15px}.final-score b{font-size:28px;color:var(--green-dark)}
     .content{padding:18px 24px 28px}
     .view.hide,.hide{display:none!important}
     .card{background:#fff;border-radius:18px;padding:20px;margin-bottom:15px;box-shadow:var(--shadow);border:1px solid rgba(220,228,232,.72)}
@@ -110,6 +111,7 @@
 
     <nav class="top-tabs" aria-label="Áreas do portal">
       <button id="tab-pontos" class="active" onclick="showView('pontos')">Painel de ponto</button>
+      <button id="tab-avaliacao" onclick="showView('avaliacao')">Avaliar residente</button>
       <button id="tab-validacoes" onclick="showView('validacoes')">Validações</button>
     </nav>
 
@@ -152,6 +154,13 @@
       </div>
     </section>
 
+    <section id="view-avaliacao" class="content view hide">
+      <div class="card hero"><div class="hero-copy"><div class="eyebrow">Avaliação formativa</div><h2>Avaliar residente</h2><p class="muted">Registro restrito aos residentes vinculados aos seus módulos.</p></div></div>
+      <div class="card"><div class="field"><label for="evalResident">Residente</label><select id="evalResident"><option value="">Carregando residentes…</option></select></div><div class="field"><label for="evalPeriod">Período</label><input id="evalPeriod" placeholder="Ex.: 1º módulo / agosto de 2026"></div><div class="field"><label for="evalDate">Data</label><input id="evalDate" type="date"></div></div>
+      <div class="card"><div id="evaluationItems"></div></div>
+      <div class="card"><div class="final-score"><div><div class="metric-label">Média final</div><div class="muted" id="evalConcept">—</div></div><b id="evalFinal">—</b></div><div class="field" style="margin-top:16px"><label for="evalObs">Observações do preceptor</label><textarea id="evalObs" placeholder="Comentários, pontos fortes e oportunidades de melhoria..."></textarea></div><button id="saveEvaluation" class="submit" onclick="saveEvaluation()">Salvar avaliação</button></div>
+    </section>
+
     <section id="view-validacoes" class="content view hide">
       <div class="card hero">
         <div class="hero-copy"><div class="eyebrow">Frequência</div><h2>Validação aleatória</h2><p class="muted">Em cada dia, até três residentes são sorteados. Você verá somente as verificações atribuídas a você e já liberadas pelo horário.</p></div>
@@ -166,9 +175,11 @@
 
 <script>
 const CLIENT_ID='439450410940-2teog3fo9flv2hvidgop73dtsuj4okp2.apps.googleusercontent.com';
-const API='https://script.google.com/macros/s/AKfycbx0ho_ppfDeuJGQ6NMkN47vGEMsPCyoIy-K3CXLhmdMRHtV7paA96Z_Xqq8fXm_UQDA/exec';
+const API='https://script.google.com/macros/s/AKfycbwmswGhzjFwkQEo_laOjSbrEtdVZcXL4CcKj6jo-y7xFdYGSknDREDb-gGyYgZ_G_0D/exec';
 let token='',profile=null,selected={},currentView='pontos',tasksLoaded=false;
 let pointCatalog={anos:[],residentes:[]},pointJourneys=[];
+let evaluationResidents=[],evaluationScores=[7,7,7,7,7,7,7,7,7];
+const EVALUATION_ITEMS=[['Conhecimentos','Apreendeu os pressupostos teóricos relacionados à prática profissional','conhecimentos'],['Habilidades','Realizou com segurança procedimentos de prevenção, diagnóstico e tratamento nas práticas clínicas e/ou cirúrgicas','habilidades'],['Atitudes','Foi pontual, assíduo e cumpriu o horário destinado às atividades da residência','atitudes'],['Atitudes','Identificou problemas e propôs soluções para o bom funcionamento do setor','atitudes'],['Atitudes','Esteve disponível para executar atividades e procedimentos conforme a necessidade dos pacientes','atitudes'],['Atitudes','Relacionou-se com o paciente de forma cordial e respeitosa, explicando as condutas adotadas','atitudes'],['Atitudes','Relacionou-se com os preceptores e demais profissionais com cordialidade e respeito','atitudes'],['Atitudes','Relacionou-se com os outros residentes de forma cordial, respeitando as diferenças individuais','atitudes'],['Atitudes','Sessão anátomo-clínica: participação e desempenho','atitudes']];
 
 function api(tipo,dados={}){
   return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({tipo:tipo,token:token,dados:dados})})
@@ -202,7 +213,15 @@ function showView(view){
   document.getElementById('view-'+view).classList.remove('hide');
   document.getElementById('tab-'+view).classList.add('active');
   if(view==='validacoes'&&!tasksLoaded)loadTasks();
+  if(view==='avaliacao')loadEvaluationResidents();
 }
+
+function renderEvaluation(){const groups=['Conhecimentos','Habilidades','Atitudes'];document.getElementById('evaluationItems').innerHTML=groups.map(g=>'<div class="eval-domain"><h3>'+g+'</h3>'+EVALUATION_ITEMS.map((item,i)=>item[0]!==g?'':'<div class="eval-item"><label>'+esc(item[1])+'</label><div class="eval-score"><input type="range" min="0" max="10" value="'+evaluationScores[i]+'" oninput="setEvaluationScore('+i+',this.value)"><b id="evalScore'+i+'">'+evaluationScores[i]+'</b></div></div>').join('')+'</div>').join('');updateEvaluationSummary()}
+function setEvaluationScore(i,v){evaluationScores[i]=Number(v);document.getElementById('evalScore'+i).textContent=v;updateEvaluationSummary()}
+function evaluationDomains(){const avg=k=>{const a=EVALUATION_ITEMS.map((x,i)=>x[2]===k?evaluationScores[i]:null).filter(x=>x!==null);return a.reduce((s,x)=>s+x,0)/a.length};return{conhecimentos:avg('conhecimentos'),habilidades:avg('habilidades'),atitudes:avg('atitudes')}}
+function updateEvaluationSummary(){const d=evaluationDomains(),f=(d.conhecimentos+d.habilidades+d.atitudes)/3;document.getElementById('evalFinal').textContent=f.toFixed(1);document.getElementById('evalConcept').textContent=f>=9?'Ótimo':f>=7?'Bom':f>=5?'Regular':'Insatisfatório'}
+async function loadEvaluationResidents(){if(evaluationResidents.length)return;try{const r=await api('residentes_preceptor');evaluationResidents=r.residentes||[];document.getElementById('evalResident').innerHTML='<option value="">Selecione o residente</option>'+evaluationResidents.map(x=>'<option value="'+escAttr(x.id)+'">'+esc(x.nome)+' · '+esc(x.ano)+' · '+esc(x.modulo)+'</option>').join('')}catch(e){toast(e.message,true)}}
+async function saveEvaluation(){const residenteId=document.getElementById('evalResident').value,periodo=document.getElementById('evalPeriod').value.trim();if(!residenteId||!periodo){toast('Selecione o residente e informe o período.',true);return}const b=document.getElementById('saveEvaluation'),txt=b.textContent;b.disabled=true;b.textContent='Salvando…';try{await api('avaliacao_preceptor',{residenteId,periodo,data:document.getElementById('evalDate').value,dominios:evaluationDomains(),obs:document.getElementById('evalObs').value.trim()});toast('Avaliação registrada com sucesso.');document.getElementById('evalPeriod').value='';document.getElementById('evalObs').value='';evaluationScores=[7,7,7,7,7,7,7,7,7];renderEvaluation()}catch(e){toast(e.message,true)}finally{b.disabled=false;b.textContent=txt}}
 
 function manausDate(){
   const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Manaus',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
@@ -363,6 +382,7 @@ window.onload=()=>{
   google.accounts.id.renderButton(document.getElementById('googleBtn'),{theme:'outline',size:'large',text:'signin_with',locale:'pt-BR',width:300});
   const saved=sessionStorage.getItem('preceptor_token');if(saved){token=saved;enter()}
   setInterval(()=>{if(token&&currentView==='validacoes')loadTasks()},60000);
+  document.getElementById('evalDate').value=manausDate();renderEvaluation();
 };
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 </script>
