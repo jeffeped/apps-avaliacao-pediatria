@@ -1,0 +1,13 @@
+{
+  "name": "ResidPed UEA — Portal do Residente",
+  "short_name": "ResidPed",
+  "description": "Portal individual do residente de Pediatria da UEA.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#006B3F",
+  "background_color": "#F3F6F8",
+  "lang": "pt-BR",
+  "icons": [{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]
+}

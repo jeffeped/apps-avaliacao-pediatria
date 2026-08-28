@@ -1,0 +1,13 @@
+{
+  "name": "ResidPed UEA — Portal do Preceptor",
+  "short_name": "PreceptorPed",
+  "description": "Portal do preceptor da Residência em Pediatria da UEA.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#075F91",
+  "background_color": "#F2F5F7",
+  "lang": "pt-BR",
+  "icons": [{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]
+}

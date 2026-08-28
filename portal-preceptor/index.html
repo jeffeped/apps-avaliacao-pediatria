@@ -4,7 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#075f91">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="PreceptorPed">
   <title>Portal do Preceptor — ResidPed UEA</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     :root{
@@ -357,6 +364,7 @@ window.onload=()=>{
   const saved=sessionStorage.getItem('preceptor_token');if(saved){token=saved;enter()}
   setInterval(()=>{if(token&&currentView==='validacoes')loadTasks()},60000);
 };
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 </script>
 </body>
 </html>
