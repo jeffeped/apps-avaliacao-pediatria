@@ -38,6 +38,7 @@
     .top-tabs{display:flex;gap:8px;padding:14px 24px 0}
     .top-tabs button{border:1px solid var(--line);background:#fff;color:var(--muted);padding:11px 16px;border-radius:11px;font-weight:800}
     .top-tabs button.active{background:var(--blue);border-color:var(--blue);color:#fff}
+    .attendance-table{width:100%;border-collapse:collapse;min-width:760px}.attendance-table th{font-size:11px;padding:10px 6px;text-align:center}.attendance-table th:first-child{text-align:left}.attendance-table td{padding:9px 6px;text-align:center}.attendance-table td:first-child{text-align:left}.attendance-btn{border:1px solid var(--line);border-radius:8px;background:#fff;min-width:34px;padding:8px 4px;font-weight:800;color:var(--muted)}.attendance-btn.P{background:var(--green-soft);border-color:#8bd0b0;color:var(--green-dark)}.attendance-btn.A{background:var(--red-soft);border-color:#e1a6a0;color:var(--red)}.attendance-btn.T{background:var(--amber-soft);border-color:#efcc7e;color:var(--amber)}.week-controls{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.week-controls b{font-size:16px}
     .eval-domain{padding:14px 0;border-bottom:1px solid var(--line)}.eval-domain:last-child{border-bottom:0}.eval-domain h3{margin:0 0 10px;color:var(--blue);font-size:15px}.eval-item{padding:11px 0;border-top:1px solid #edf1f3}.eval-item label{display:block;font-size:13px;line-height:1.4;margin-bottom:7px}.eval-score{display:flex;align-items:center;gap:12px}.eval-score input{flex:1;accent-color:var(--green)}.eval-score b{width:30px;text-align:center;color:var(--green);font-size:17px}.final-score{display:flex;align-items:center;justify-content:space-between;background:var(--green-soft);border-radius:13px;padding:15px}.final-score b{font-size:28px;color:var(--green-dark)}
     .content{padding:18px 24px 28px}
     .view.hide,.hide{display:none!important}
@@ -111,6 +112,7 @@
 
     <nav class="top-tabs" aria-label="Áreas do portal">
       <button id="tab-pontos" class="active" onclick="showView('pontos')">Painel de ponto</button>
+      <button id="tab-frequencia" onclick="showView('frequencia')">Frequência</button>
       <button id="tab-avaliacao" onclick="showView('avaliacao')">Avaliar residente</button>
       <button id="tab-validacoes" onclick="showView('validacoes')">Validações</button>
     </nav>
@@ -154,6 +156,11 @@
       </div>
     </section>
 
+    <section id="view-frequencia" class="content view hide">
+      <div class="card hero"><div class="hero-copy"><div class="eyebrow">Registro semanal</div><h2>Frequência dos residentes</h2><p class="muted">Toque no dia para alternar entre presente, falta, atraso e sem registro. O lançamento vale para manhã e tarde.</p></div></div>
+      <div class="card"><div class="week-controls"><button class="secondary" onclick="changeAttendanceWeek(-1)">← Semana anterior</button><b id="attendanceWeekLabel">—</b><button class="secondary" onclick="changeAttendanceWeek(1)">Próxima semana →</button></div><button class="primary" onclick="markAttendanceWeek('P')">✓ Marcar todos presentes</button><div class="table-wrap" style="margin-top:14px"><table class="attendance-table"><thead id="attendanceHead"></thead><tbody id="attendanceBody"></tbody></table></div><button id="saveAttendance" class="submit" onclick="saveAttendance()">Salvar frequência da semana</button></div>
+    </section>
+
     <section id="view-avaliacao" class="content view hide">
       <div class="card hero"><div class="hero-copy"><div class="eyebrow">Avaliação formativa</div><h2>Avaliar residente</h2><p class="muted">Registro restrito aos residentes vinculados aos seus módulos.</p></div></div>
       <div class="card"><div class="field"><label for="evalResident">Residente</label><select id="evalResident"><option value="">Carregando residentes…</option></select></div><div class="field"><label for="evalPeriod">Período</label><input id="evalPeriod" placeholder="Ex.: 1º módulo / agosto de 2026"></div><div class="field"><label for="evalDate">Data</label><input id="evalDate" type="date"></div></div>
@@ -178,6 +185,7 @@ const CLIENT_ID='439450410940-2teog3fo9flv2hvidgop73dtsuj4okp2.apps.googleuserco
 const API='https://script.google.com/macros/s/AKfycbwmswGhzjFwkQEo_laOjSbrEtdVZcXL4CcKj6jo-y7xFdYGSknDREDb-gGyYgZ_G_0D/exec';
 let token='',profile=null,selected={},currentView='pontos',tasksLoaded=false;
 let pointCatalog={anos:[],residentes:[]},pointJourneys=[];
+let attendanceResidents=[],attendanceRecords={},attendanceWeekStart='';
 let evaluationResidents=[],evaluationScores=[7,7,7,7,7,7,7,7,7];
 const EVALUATION_ITEMS=[['Conhecimentos','Apreendeu os pressupostos teóricos relacionados à prática profissional','conhecimentos'],['Habilidades','Realizou com segurança procedimentos de prevenção, diagnóstico e tratamento nas práticas clínicas e/ou cirúrgicas','habilidades'],['Atitudes','Foi pontual, assíduo e cumpriu o horário destinado às atividades da residência','atitudes'],['Atitudes','Identificou problemas e propôs soluções para o bom funcionamento do setor','atitudes'],['Atitudes','Esteve disponível para executar atividades e procedimentos conforme a necessidade dos pacientes','atitudes'],['Atitudes','Relacionou-se com o paciente de forma cordial e respeitosa, explicando as condutas adotadas','atitudes'],['Atitudes','Relacionou-se com os preceptores e demais profissionais com cordialidade e respeito','atitudes'],['Atitudes','Relacionou-se com os outros residentes de forma cordial, respeitando as diferenças individuais','atitudes'],['Atitudes','Sessão anátomo-clínica: participação e desempenho','atitudes']];
 
@@ -214,7 +222,18 @@ function showView(view){
   document.getElementById('tab-'+view).classList.add('active');
   if(view==='validacoes'&&!tasksLoaded)loadTasks();
   if(view==='avaliacao')loadEvaluationResidents();
+  if(view==='frequencia')loadAttendance();
 }
+
+function weekDays(start){const d=new Date(start+'T12:00:00'),out=[];for(let i=0;i<5;i++){const x=new Date(d);x.setDate(d.getDate()+i);out.push(x.toISOString().slice(0,10))}return out}
+function monday(value=manausDate()){const d=new Date(value+'T12:00:00'),n=(d.getDay()+6)%7;d.setDate(d.getDate()-n);return d.toISOString().slice(0,10)}
+function formatWeekDay(date){const x=new Date(date+'T12:00:00');return ['Seg','Ter','Qua','Qui','Sex'][x.getDay()-1]+'<br><span class="cell-note">'+String(x.getDate()).padStart(2,'0')+'/'+String(x.getMonth()+1).padStart(2,'0')+'</span>'}
+async function loadAttendance(){if(!attendanceWeekStart)attendanceWeekStart=monday();try{const r=await api('frequencia_preceptor',{acao:'listar',inicio:attendanceWeekStart,fim:weekDays(attendanceWeekStart)[4]});attendanceResidents=r.residentes||[];attendanceRecords={};(r.registros||[]).forEach(x=>attendanceRecords[x.residenteId+'|'+x.data]=x.status);renderAttendance()}catch(e){toast(e.message,true)}}
+function renderAttendance(){const ds=weekDays(attendanceWeekStart),first=new Date(ds[0]+'T12:00:00'),last=new Date(ds[4]+'T12:00:00');document.getElementById('attendanceWeekLabel').textContent=first.toLocaleDateString('pt-BR')+' a '+last.toLocaleDateString('pt-BR');document.getElementById('attendanceHead').innerHTML='<tr><th>Residente</th>'+ds.map(formatWeekDay).map(x=>'<th>'+x+'</th>').join('')+'</tr>';document.getElementById('attendanceBody').innerHTML=attendanceResidents.length?attendanceResidents.map(r=>'<tr><td><b>'+esc(r.nome)+'</b><div class="cell-note">'+esc(r.ano)+' · '+esc(r.modulo)+'</div></td>'+ds.map(d=>{const v=attendanceRecords[r.id+'|'+d]||'';return'<td><button class="attendance-btn '+v+'" onclick="cycleAttendance(\''+escAttr(r.id)+'\',\''+d+'\')">'+(v||'—')+'</button></td>'}).join('')+'</tr>').join(''):'<tr><td colspan="6">Nenhum residente vinculado ao módulo atual.</td></tr>'}
+function cycleAttendance(id,date){const k=id+'|'+date,v=attendanceRecords[k]||'';attendanceRecords[k]=v===''?'P':v==='P'?'A':v==='A'?'T':'';if(!attendanceRecords[k])delete attendanceRecords[k];renderAttendance()}
+function markAttendanceWeek(v){attendanceResidents.forEach(r=>weekDays(attendanceWeekStart).forEach(d=>attendanceRecords[r.id+'|'+d]=v));renderAttendance()}
+function changeAttendanceWeek(step){const d=new Date(attendanceWeekStart+'T12:00:00');d.setDate(d.getDate()+step*7);attendanceWeekStart=d.toISOString().slice(0,10);loadAttendance()}
+async function saveAttendance(){const registros=Object.entries(attendanceRecords).map(([k,status])=>{const [residenteId,data]=k.split('|');return{residenteId,data,status}});if(!registros.length){toast('Marque ao menos um registro.',true);return}const b=document.getElementById('saveAttendance'),t=b.textContent;b.disabled=true;b.textContent='Salvando…';try{await api('frequencia_preceptor',{acao:'salvar',registros});toast('Frequência salva.');await loadAttendance()}catch(e){toast(e.message,true)}finally{b.disabled=false;b.textContent=t}}
 
 function renderEvaluation(){const groups=['Conhecimentos','Habilidades','Atitudes'];document.getElementById('evaluationItems').innerHTML=groups.map(g=>'<div class="eval-domain"><h3>'+g+'</h3>'+EVALUATION_ITEMS.map((item,i)=>item[0]!==g?'':'<div class="eval-item"><label>'+esc(item[1])+'</label><div class="eval-score"><input type="range" min="0" max="10" value="'+evaluationScores[i]+'" oninput="setEvaluationScore('+i+',this.value)"><b id="evalScore'+i+'">'+evaluationScores[i]+'</b></div></div>').join('')+'</div>').join('');updateEvaluationSummary()}
 function setEvaluationScore(i,v){evaluationScores[i]=Number(v);document.getElementById('evalScore'+i).textContent=v;updateEvaluationSummary()}
