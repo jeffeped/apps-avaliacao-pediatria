@@ -945,16 +945,16 @@ textarea{resize:none;height:80px}
 <div class="modal-ov" id="modal-sync">
   <div class="modal-box">
     <div class="modal-handle"></div>
-    <div class="modal-title">⚙️ Google Sheets</div>
+    <div class="modal-title">☁️ Conexão de dados</div>
     <div style="font-size:12px;color:var(--cinza-e);margin-bottom:14px;line-height:1.6">
-      Cole a URL do Web App do Google Apps Script (Code.gs publicado).<br>
-      <strong>Implantar → App da Web → Qualquer pessoa.</strong>
+      Os cadastros são enviados automaticamente para a mesma base do Portal do Residente.<br>
+      Use esta opção apenas para restaurar a conexão oficial neste aparelho.
     </div>
     <div class="fg">
-      <label>URL do Web App</label>
-      <input type="text" id="input-sync-url" placeholder="https://script.google.com/macros/s/...">
+      <label>Base oficial do Portal do Residente</label>
+      <input type="text" id="input-sync-url" readonly>
     </div>
-    <button class="btn btn-primary" onclick="salvarConfigSync()">✓ Salvar e Testar</button>
+    <button class="btn btn-primary" onclick="salvarConfigSync()">✓ Restaurar conexão oficial</button>
     <button class="btn btn-secondary" onclick="fecharModal('modal-sync')" style="margin-top:8px">Cancelar</button>
   </div>
 </div>
@@ -1357,7 +1357,7 @@ function abrirModalAddRes() {
   setTimeout(()=>document.getElementById('add-res-nome').focus(), 300);
 }
 
-function adicionarResidente() {
+async function adicionarResidente() {
   const nome=document.getElementById('add-res-nome').value.trim();
   const email=document.getElementById('add-res-email').value.trim().toLowerCase();
   if(!nome) { showToast('Digite o nome do residente','e'); return; }
@@ -1372,14 +1372,15 @@ function adicionarResidente() {
   updateCounts();
   renderTurmaList();
   updateResidentesList();
-  showToast('✓ '+nome+' adicionado','s');
+  const sincronizado=await sincronizarAuto('residentes',APP);
+  showToast(sincronizado?'✓ '+nome+' cadastrado e sincronizado':'⚠️ '+nome+' foi salvo; a sincronização será repetida automaticamente',sincronizado?'s':'e');
 }
 
 function importarResidentesTxt(input) {
   const file=input.files&&input.files[0];
   if(!file) return;
   const reader=new FileReader();
-  reader.onload=()=>{
+  reader.onload=async()=>{
     try {
       const linhas=String(reader.result||'').replace(/^\uFEFF/,'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
       const validos=[],erros=[];
@@ -1399,8 +1400,9 @@ function importarResidentesTxt(input) {
       const aviso=erros.length?`\n\n${erros.length} linha(s) serão ignoradas.`:'';
       if(!confirm(`Importar ${validos.length} residente(s)?\n\n${resumo}${aviso}`)) return;
       validos.forEach(r=>{const id=uid();if(!APP.residentes[r.ano])APP.residentes[r.ano]={};APP.residentes[r.ano][id]={id,name:r.nome,email:r.email,attendance:{}}});
-      saveApp();updateCounts();renderTurmaList();updateResidentesList();sincronizarAuto('residentes',APP);
-      showToast(`✓ ${validos.length} residente(s) importado(s)`,'s');
+      saveApp();updateCounts();renderTurmaList();updateResidentesList();
+      const sincronizado=await sincronizarAuto('residentes',APP);
+      showToast(sincronizado?`✓ ${validos.length} residente(s) importado(s) e sincronizado(s)`:'⚠️ Importação salva; a sincronização será repetida automaticamente',sincronizado?'s':'e');
     } catch(e) { showToast('Não foi possível ler o arquivo .txt','e'); }
     finally { input.value=''; }
   };
@@ -1408,7 +1410,7 @@ function importarResidentesTxt(input) {
   reader.readAsText(file,'UTF-8');
 }
 
-function removerResidente(year, id) {
+async function removerResidente(year, id) {
   const r=APP.residentes[year][id];
   if(!r) return;
   if(!confirm('Remover '+r.name+'? Os dados de frequência serão perdidos.')) return;
@@ -1417,17 +1419,20 @@ function removerResidente(year, id) {
   updateCounts();
   renderTurmaList();
   updateResidentesList();
-  showToast('Residente removido','e');
+  const sincronizado=await sincronizarAuto('residentes',APP);
+  showToast(sincronizado?'Residente removido e sincronizado':'Residente removido neste aparelho; sincronização pendente',sincronizado?'s':'e');
 }
 
-function cadastrarEmailResidente(year,id){
+async function cadastrarEmailResidente(year,id){
   const r=APP.residentes[year]&&APP.residentes[year][id];if(!r)return;
   const email=prompt('E-mail da conta Google de '+r.name+':',r.email||'');if(email===null)return;
   const normalizado=email.trim().toLowerCase();
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizado)){showToast('E-mail inválido','e');return;}
   const existe=['R1','R2','R3'].some(yr=>Object.values(APP.residentes[yr]||{}).some(x=>x.id!==id&&(x.email||'').toLowerCase()===normalizado));
   if(existe){showToast('Este e-mail já está cadastrado','e');return;}
-  r.email=normalizado;saveApp();renderTurmaList();sincronizarAuto('residentes',APP);showToast('✓ E-mail vinculado','s');
+  r.email=normalizado;saveApp();renderTurmaList();
+  const sincronizado=await sincronizarAuto('residentes',APP);
+  showToast(sincronizado?'✓ E-mail vinculado e sincronizado':'⚠️ E-mail vinculado neste aparelho; sincronização pendente',sincronizado?'s':'e');
 }
 
 function preencherAvaliacao(id, year) {
@@ -1843,7 +1848,10 @@ document.querySelectorAll('.modal-ov').forEach(m=>m.addEventListener('click',fun
 // ============================================================
 // SYNC — Google Sheets via Apps Script
 // ============================================================
-function getScriptUrl() { return localStorage.getItem('residped_script_url')||''; }
+// Cadastros e login usam obrigatoriamente a mesma implantação do Apps Script.
+// Isso evita que um residente seja salvo em uma planilha e procure acesso em outra.
+const RESIDENT_PORTAL_API_URL='https://script.google.com/macros/s/AKfycbx0ho_ppfDeuJGQ6NMkN47vGEMsPCyoIy-K3CXLhmdMRHtV7paA96Z_Xqq8fXm_UQDA/exec';
+function getScriptUrl() { return RESIDENT_PORTAL_API_URL; }
 
 function atualizarStatusSync() {
   const btn=document.getElementById('btn-sync');
@@ -1869,12 +1877,13 @@ async function enviarParaSheets(tipo, dados) {
 
 async function sincronizarAuto(tipo, dados) {
   const url=getScriptUrl();
-  if(!url){addPendente(tipo,dados);return;}
+  if(!url){addPendente(tipo,dados);return false;}
   const ok=await enviarParaSheets(tipo,dados);
   if(ok){showToast('☁️ Sincronizado!','s');}
   else{addPendente(tipo,dados);}
   atualizarStatusSync();
   processarFila();
+  return ok;
 }
 
 async function processarFila() {
@@ -1918,11 +1927,9 @@ function abrirModalSync() {
 }
 
 function salvarConfigSync() {
-  const url=document.getElementById('input-sync-url').value.trim();
-  if(!url.startsWith('https://script.google.com')){showToast('URL inválida','e');return;}
-  localStorage.setItem('residped_script_url',url);
+  localStorage.removeItem('residped_script_url');
   fecharModal('modal-sync');
-  showToast('✓ URL salva!','s');
+  showToast('✓ Conexão oficial restaurada!','s');
   atualizarStatusSync();
 }
 
