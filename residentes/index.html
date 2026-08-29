@@ -846,11 +846,13 @@ textarea{resize:none;height:80px}
 
   <div class="card">
     <div class="card-title">👨‍🏫 Professores/preceptores</div>
-    <div class="gps-note" style="margin-bottom:12px">Importe um arquivo .txt ou .csv com uma linha por vínculo no formato:<br><strong>Nome;E-mail Google;Ano;Nome exato do módulo</strong></div>
+    <div class="gps-note" style="margin-bottom:12px">Cadastre cada vínculo individualmente ou importe um arquivo .txt/.csv no formato:<br><strong>Nome;E-mail Google;Ano;Nome exato do módulo</strong></div>
+    <button class="btn btn-primary" onclick="abrirModalAddPreceptor()">+ Adicionar preceptor</button>
     <button class="btn btn-primary" onclick="document.getElementById('import-preceptores-file').click()">📥 Importar professores/preceptores</button>
     <input id="import-preceptores-file" type="file" accept=".txt,.csv,text/plain,text/csv" hidden onchange="importarPreceptoresArquivo(this)">
     <textarea id="cfg-preceptores" hidden></textarea>
     <div id="preceptores-import-status" class="gps-note" style="margin-top:10px">Nenhum professor/preceptor importado.</div>
+    <div id="preceptores-list" style="margin-top:12px"></div>
   </div>
 
   <div class="card">
@@ -938,6 +940,22 @@ textarea{resize:none;height:80px}
     </div>
     <button class="btn btn-primary" onclick="adicionarResidente()">✓ Adicionar</button>
     <button class="btn btn-secondary" onclick="fecharModal('modal-add-res')" style="margin-top:8px">Cancelar</button>
+  </div>
+</div>
+
+<!-- MODAL: ADD PRECEPTOR -->
+<div class="modal-ov" id="modal-add-preceptor">
+  <div class="modal-box">
+    <div class="modal-handle"></div>
+    <div class="modal-title">+ Adicionar preceptor</div>
+    <div class="fg"><label>Nome completo</label><input type="text" id="add-preceptor-nome" placeholder="Nome do preceptor"></div>
+    <div class="fg"><label>E-mail da conta Google</label><input type="email" id="add-preceptor-email" placeholder="preceptor@gmail.com"></div>
+    <div class="fr">
+      <div class="fg"><label>Ano</label><select id="add-preceptor-ano" onchange="atualizarModulosAddPreceptor()"><option value="R1">R1</option><option value="R2">R2</option><option value="R3">R3</option></select></div>
+      <div class="fg"><label>Módulo</label><select id="add-preceptor-modulo"></select></div>
+    </div>
+    <button class="btn btn-primary" onclick="adicionarPreceptor()">✓ Adicionar</button>
+    <button class="btn btn-secondary" onclick="fecharModal('modal-add-preceptor')" style="margin-top:8px">Cancelar</button>
   </div>
 </div>
 
@@ -1791,8 +1809,64 @@ function restoreConfig() {
 
 function atualizarStatusPreceptoresImportados() {
   const el=document.getElementById('preceptores-import-status');if(!el)return;
-  const total=String(APP.preceptores||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean).length;
-  el.textContent=total?`${total} vínculo(s) de professor/preceptor importado(s).`:'Nenhum professor/preceptor importado.';
+  const total=preceptoresCadastrados().length;
+  el.textContent=total?`${total} vínculo(s) de professor/preceptor cadastrado(s).`:'Nenhum professor/preceptor cadastrado.';
+  renderPreceptoresList();
+}
+
+function preceptoresCadastrados() {
+  return String(APP.preceptores||'').split(/\r?\n/).map((linha,index)=>{
+    const partes=linha.split(';').map(x=>x.trim());
+    return {linha,index,nome:partes[0]||'',email:(partes[1]||'').toLowerCase(),ano:(partes[2]||'').toUpperCase(),modulo:partes.slice(3).join(';').trim()};
+  }).filter(p=>p.nome&&p.email&&['R1','R2','R3'].includes(p.ano)&&p.modulo);
+}
+
+function renderPreceptoresList() {
+  const container=document.getElementById('preceptores-list');if(!container)return;
+  const lista=preceptoresCadastrados();
+  if(!lista.length){container.innerHTML='';return;}
+  const cores={R1:'azul',R2:'roxo',R3:'verde'};
+  container.innerHTML=['R1','R2','R3'].map(ano=>{
+    const grupo=lista.filter(p=>p.ano===ano);
+    const itens=grupo.length?grupo.map((p,i)=>`<div class="res-card" style="margin:8px 0;padding:12px">
+      <div class="res-avatar ${ano}">${p.nome.split(' ').filter(Boolean).map(x=>x[0]).join('').slice(0,2).toUpperCase()}</div>
+      <div style="flex:1;min-width:0"><div class="res-name">${i+1}. ${escapeHtml(p.nome)}</div><div style="font-size:10px;color:var(--cinza-e);overflow:hidden;text-overflow:ellipsis">${escapeHtml(p.email)}</div><div class="mini-stats"><span class="mini-stat ${cores[ano]}">${escapeHtml(p.modulo)}</span></div></div>
+      <button onclick="removerPreceptor(${p.index})" style="background:none;border:none;font-size:14px;cursor:pointer;color:var(--cinza-e);padding:2px">🗑️</button>
+    </div>`).join(''):`<div class="gps-note" style="padding:8px 0">Nenhum preceptor cadastrado em ${ano}.</div>`;
+    return `<div style="margin-top:16px"><div class="card-title"><span style="background:rgba(${ano==='R1'?'0,74,124':ano==='R2'?'107,47,160':'0,107,63'},.12);color:var(--${cores[ano]});padding:2px 12px;border-radius:20px;font-size:12px;font-weight:800">${ano} (${grupo.length})</span></div>${itens}</div>`;
+  }).join('');
+}
+
+function abrirModalAddPreceptor() {
+  document.getElementById('add-preceptor-nome').value='';document.getElementById('add-preceptor-email').value='';document.getElementById('add-preceptor-ano').value='R1';
+  atualizarModulosAddPreceptor();document.getElementById('modal-add-preceptor').classList.add('show');
+  setTimeout(()=>document.getElementById('add-preceptor-nome').focus(),300);
+}
+
+function atualizarModulosAddPreceptor() {
+  const ano=document.getElementById('add-preceptor-ano').value,select=document.getElementById('add-preceptor-modulo');
+  const modulo=((APP.programas||{})[ano]||{}).moduloName||'';
+  select.innerHTML=modulo?`<option value="${escapeHtml(modulo)}">${escapeHtml(modulo)}</option>`:'<option value="">Configure o módulo deste ano primeiro</option>';
+}
+
+async function adicionarPreceptor() {
+  const nome=document.getElementById('add-preceptor-nome').value.trim(),email=document.getElementById('add-preceptor-email').value.trim().toLowerCase(),ano=document.getElementById('add-preceptor-ano').value,modulo=document.getElementById('add-preceptor-modulo').value.trim();
+  if(!nome){showToast('Digite o nome do preceptor','e');return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showToast('Informe o e-mail Google do preceptor','e');return;}
+  if(!modulo){showToast('Configure o módulo de '+ano+' antes de cadastrar','e');return;}
+  if(preceptoresCadastrados().some(p=>p.email===email&&p.ano===ano&&p.modulo.toLowerCase()===modulo.toLowerCase())){showToast('Este vínculo já está cadastrado','e');return;}
+  const texto=[String(APP.preceptores||'').trim(),[nome,email,ano,modulo].join(';')].filter(Boolean).join('\n');
+  APP.preceptores=texto;document.getElementById('cfg-preceptores').value=texto;saveApp();atualizarStatusPreceptoresImportados();fecharModal('modal-add-preceptor');
+  const sincronizado=await sincronizarAuto('preceptores',{preceptores:texto});
+  showToast(sincronizado?'✓ '+nome+' cadastrado e sincronizado':'⚠️ '+nome+' foi salvo; a sincronização será repetida automaticamente',sincronizado?'s':'e');
+}
+
+async function removerPreceptor(index) {
+  const lista=preceptoresCadastrados(),preceptor=lista.find(p=>p.index===index);if(!preceptor)return;
+  if(!confirm(`Remover o vínculo de ${preceptor.nome} em ${preceptor.ano} · ${preceptor.modulo}?`))return;
+  const texto=String(APP.preceptores||'').split(/\r?\n/).filter((_,i)=>i!==index).join('\n').trim();
+  APP.preceptores=texto;document.getElementById('cfg-preceptores').value=texto;saveApp();atualizarStatusPreceptoresImportados();
+  await sincronizarAuto('preceptores',{preceptores:texto});showToast('Vínculo removido','s');
 }
 
 function importarPreceptoresArquivo(input) {
