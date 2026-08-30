@@ -81,10 +81,11 @@
     .login-icon{font-size:44px}.login h1{font-size:24px;margin-bottom:8px}
     .task{border-top:5px solid var(--green)}.meta{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px}.tag{background:var(--green-soft);color:#00633f;border-radius:99px;padding:6px 10px;font-weight:700;font-size:12px}.resident{font-size:22px;font-weight:800;margin:14px 0}.choices{display:grid;gap:9px}.choice{width:100%;border:1px solid var(--line);border-radius:11px;background:#fff;padding:13px;text-align:left;font-size:15px;font-weight:700}.choice.selected{border:2px solid var(--green);background:#eaf7f1;color:#00653f}.choice.abs.selected{border-color:#c83b32;background:var(--red-soft);color:#9d1b14}textarea{width:100%;height:76px;border:1px solid var(--line);border-radius:10px;padding:11px;margin-top:12px}.submit,.refresh{width:100%;font-size:15px;margin-top:12px}.done-card{border-left:5px solid #7c8a96}.status{font-weight:800;color:var(--green)}
     .feedback-intro{background:var(--blue-soft);border-left:5px solid var(--blue);color:#334d63}.feedback-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.feedback-card{margin:0;border-top:5px solid var(--green)}.feedback-card:nth-child(2n){border-top-color:var(--blue)}.feedback-card.full{grid-column:1/-1}.feedback-card h3{color:var(--blue);margin-bottom:9px}.feedback-card p{font-size:14px;line-height:1.55;color:#43546a;margin-bottom:10px}.feedback-card p:last-child{margin-bottom:0}.feedback-tip{margin-top:12px;padding:11px 12px;border-radius:10px;background:var(--green-soft);font-size:13px;line-height:1.45;color:#315d4a}.sbi{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}.sbi-step{border:1px solid var(--line);border-radius:11px;padding:12px;background:#f8fafb}.sbi-step b{display:block;color:var(--green-dark);margin-bottom:5px}.sbi-step span{font-size:13px;line-height:1.4;color:#506074}.scale{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:12px}.scale-item{border-radius:10px;padding:10px;font-size:12px;line-height:1.35}.scale-item b{display:block;font-size:15px;margin-bottom:3px}.scale-item.critical{background:var(--red-soft);color:var(--red)}.scale-item.attention{background:var(--amber-soft);color:var(--amber)}.scale-item.good{background:var(--blue-soft);color:var(--blue-dark)}.scale-item.great{background:var(--green-soft);color:var(--green-dark)}
+    .apc-intro{background:var(--blue-soft);border-left:5px solid var(--blue);color:#334d63;font-size:14px;line-height:1.55}.apc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.apc-card{margin:0;border-top:5px solid var(--green)}.apc-card:nth-child(2n){border-top-color:var(--blue)}.apc-card h3{font-size:16px;line-height:1.4;color:var(--blue);margin-bottom:9px}.apc-card p{font-size:13px;line-height:1.5;color:#43546a;margin-bottom:0}.apc-tag{display:inline-block;background:var(--green-soft);color:var(--green-dark);border-radius:99px;padding:6px 10px;margin-top:12px;font-size:12px;font-weight:800}
     footer{text-align:center;color:var(--muted);font-size:12px;padding:5px 20px 25px}
     .toast{position:fixed;right:22px;bottom:22px;z-index:20;background:var(--ink);color:#fff;border-radius:11px;padding:12px 16px;font-size:13px;box-shadow:0 10px 30px #1522383b;transform:translateY(25px);opacity:0;pointer-events:none;transition:.2s}.toast.show{transform:none;opacity:1}.toast.error-toast{background:var(--red)}
     @media(max-width:780px){
-      header{border-radius:0;padding:20px 16px 16px}.brand{font-size:22px}.top-tabs{padding:12px 14px 0;overflow-x:auto}.top-tabs button{flex:0 0 auto;padding:10px 8px;font-size:13px}.content{padding:14px}.hero{display:block;padding:17px}.hero .secondary{width:100%;margin-top:14px}.filters{grid-template-columns:1fr 1fr}.summary{grid-template-columns:1fr 1fr}.feedback-grid{grid-template-columns:1fr}.feedback-card.full{grid-column:auto}.sbi,.scale{grid-template-columns:1fr}.filter-actions{align-items:flex-start;flex-direction:column}.filter-buttons{width:100%}.filter-buttons button{flex:1}.list-head{align-items:flex-start;flex-direction:column}.list-head .primary{width:100%}.small{white-space:normal}.profile{align-items:flex-start}
+      header{border-radius:0;padding:20px 16px 16px}.brand{font-size:22px}.top-tabs{padding:12px 14px 0;overflow-x:auto}.top-tabs button{flex:0 0 auto;padding:10px 8px;font-size:13px}.content{padding:14px}.hero{display:block;padding:17px}.hero .secondary{width:100%;margin-top:14px}.filters{grid-template-columns:1fr 1fr}.summary{grid-template-columns:1fr 1fr}.feedback-grid,.apc-grid{grid-template-columns:1fr}.feedback-card.full{grid-column:auto}.sbi,.scale{grid-template-columns:1fr}.filter-actions{align-items:flex-start;flex-direction:column}.filter-buttons{width:100%}.filter-buttons button{flex:1}.list-head{align-items:flex-start;flex-direction:column}.list-head .primary{width:100%}.small{white-space:normal}.profile{align-items:flex-start}
       .table-wrap{overflow:visible;border:0}.table-wrap table{min-width:0;background:transparent}.table-wrap thead{display:none}.table-wrap tbody{display:grid;gap:10px}.table-wrap tr{display:grid;grid-template-columns:1fr 1fr;background:#fff;border:1px solid var(--line);border-radius:13px;padding:3px 12px;box-shadow:0 3px 12px rgba(20,52,72,.05)}.table-wrap td{display:block;padding:11px 5px;border-bottom:1px solid #edf1f3}.table-wrap td::before{content:attr(data-label);display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.04em;font-weight:800;margin-bottom:5px}.table-wrap td:first-child,.table-wrap td:nth-child(2),.table-wrap td:last-child{grid-column:1/-1}.table-wrap td:nth-last-child(-n+1){border-bottom:0}
     }
     @media(max-width:480px){.filters{grid-template-columns:1fr}.summary{gap:8px}.metric{padding:13px}.metric-value{font-size:23px}.profile img{width:36px;height:36px}.btn-out{padding:8px 10px}.table-wrap tr{grid-template-columns:1fr}.table-wrap td{grid-column:1/-1}}
@@ -116,6 +117,7 @@
       <button id="tab-frequencia" onclick="showView('frequencia')">Frequência</button>
       <button id="tab-avaliacao" onclick="showView('avaliacao')">Avaliar residente</button>
       <button id="tab-feedback" onclick="showView('feedback')">Guia de feedback</button>
+      <button id="tab-apcs" onclick="showView('apcs')">APCs</button>
       <button id="tab-validacoes" onclick="showView('validacoes')">Validações</button>
     </nav>
 
@@ -185,6 +187,12 @@
       </div>
     </section>
 
+    <section id="view-apcs" class="content view hide">
+      <div class="card hero"><div class="hero-copy"><div class="eyebrow">Referência pedagógica</div><h2>Atividades Profissionais Confiáveis</h2><p class="muted">Use as APCs para contextualizar observações e conversas de desenvolvimento com residentes.</p></div></div>
+      <div class="card apc-intro"><b>Referência de aprendizagem para Pediatria Geral.</b> As 12 APCs organizam situações centrais da prática pediátrica e não substituem os objetivos, a supervisão ou os instrumentos de avaliação definidos pelo programa de residência.</div>
+      <div class="apc-grid" id="apcGrid"></div>
+    </section>
+
     <section id="view-validacoes" class="content view hide">
       <div class="card hero">
         <div class="hero-copy"><div class="eyebrow">Frequência</div><h2>Validação aleatória</h2><p class="muted">Em cada dia, até três residentes são sorteados. Você verá somente as verificações atribuídas a você e já liberadas pelo horário.</p></div>
@@ -205,6 +213,20 @@ let pointCatalog={anos:[],residentes:[]},pointJourneys=[];
 let attendanceResidents=[],attendanceRecords={},attendanceWeekStart='';
 let evaluationResidents=[],evaluationScores=[7,7,7,7,7,7,7,7,7];
 const EVALUATION_ITEMS=[['Conhecimentos','Apreendeu os pressupostos teóricos relacionados à prática profissional','conhecimentos'],['Habilidades','Realizou com segurança procedimentos de prevenção, diagnóstico e tratamento nas práticas clínicas e/ou cirúrgicas','habilidades'],['Atitudes','Foi pontual, assíduo e cumpriu o horário destinado às atividades da residência','atitudes'],['Atitudes','Identificou problemas e propôs soluções para o bom funcionamento do setor','atitudes'],['Atitudes','Esteve disponível para executar atividades e procedimentos conforme a necessidade dos pacientes','atitudes'],['Atitudes','Relacionou-se com o paciente de forma cordial e respeitosa, explicando as condutas adotadas','atitudes'],['Atitudes','Relacionou-se com os preceptores e demais profissionais com cordialidade e respeito','atitudes'],['Atitudes','Relacionou-se com os outros residentes de forma cordial, respeitando as diferenças individuais','atitudes'],['Atitudes','Sessão anátomo-clínica: participação e desempenho','atitudes']];
+const APCS=[
+['APC 1','Atenção primária preventiva','Acompanhamento preventivo de crianças e adolescentes em todas as idades','—'],
+['APC 2','Atenção primária à criança com necessidades complexas','Cuidado longitudinal de condições crônicas, complexas ou necessidades especiais','—'],
+['APC 3','Manejo de queixas agudas frequentes','Avaliação e plano de cuidado para diagnósticos pediátricos comuns','—'],
+['APC 4','Saúde mental e comportamento','Identificação e manejo inicial de demandas comportamentais e de saúde mental','—'],
+['APC 5','Cuidado do recém-nascido antes da alta','Avaliação, orientação e planejamento da alta neonatal','—'],
+['APC 6','Encaminhamento e interconsulta especializados','Reconhecimento da necessidade, manejo inicial e comunicação para referência','—'],
+['APC 7','Paciente gravemente enfermo','Avaliação rápida, estabilização inicial e mobilização de recursos','—'],
+['APC 8','Transição e passagem de caso','Comunicação clínica segura entre profissionais e cenários de cuidado','—'],
+['APC 9','Procedimentos pediátricos comuns','Indicação, realização segura e manejo de complicações','—'],
+['APC 10','Trabalho em equipe interprofissional','Coordenação de cuidado colaborativo e centrado na família','—'],
+['APC 11','Equidade no cuidado pediátrico','Atenção às iniquidades, determinantes sociais e necessidades de cada família','—'],
+['APC 12','Tecnologia e fontes de informação','Uso crítico e seguro de tecnologia e informação para aprender e cuidar','—']
+];
 
 function api(tipo,dados={}){
   return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({tipo:tipo,token:token,dados:dados})})
@@ -239,8 +261,11 @@ function showView(view){
   document.getElementById('tab-'+view).classList.add('active');
   if(view==='validacoes'&&!tasksLoaded)loadTasks();
   if(view==='avaliacao')loadEvaluationResidents();
+  if(view==='apcs')renderApcs();
   if(view==='frequencia')loadAttendance();
 }
+
+function renderApcs(){document.getElementById('apcGrid').innerHTML=APCS.map(a=>'<article class="card apc-card"><h3>'+a[0]+' — '+a[1]+'</h3><p>'+a[2]+'</p></article>').join('')}
 
 function weekDays(start){const d=new Date(start+'T12:00:00'),out=[];for(let i=0;i<5;i++){const x=new Date(d);x.setDate(d.getDate()+i);out.push(x.toISOString().slice(0,10))}return out}
 function monday(value=manausDate()){const d=new Date(value+'T12:00:00'),n=(d.getDay()+6)%7;d.setDate(d.getDate()-n);return d.toISOString().slice(0,10)}
