@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <meta name="theme-color" content="#006B3F">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -807,6 +808,10 @@ textarea{resize:none;height:80px}
     <div class="dash-grid" id="dash-stats"></div>
   </div>
   <div class="card">
+    <div class="card-title">🔍 Autoavaliações dos residentes</div>
+    <div id="dash-autoavaliacoes"><div style="text-align:center;color:var(--cinza-e);padding:12px;font-size:12px">Carregando acesso seguro…</div></div>
+  </div>
+  <div class="card">
     <div class="card-title">Frequência por Ano (módulo atual)</div>
     <div id="dash-freq"></div>
   </div>
@@ -974,6 +979,17 @@ textarea{resize:none;height:80px}
     </div>
     <button class="btn btn-primary" onclick="salvarConfigSync()">✓ Restaurar conexão oficial</button>
     <button class="btn btn-secondary" onclick="fecharModal('modal-sync')" style="margin-top:8px">Cancelar</button>
+  </div>
+</div>
+
+<!-- MODAL: ACESSO ÀS AUTOAVALIAÇÕES -->
+<div class="modal-ov" id="modal-auto-login">
+  <div class="modal-box">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🔒 Acesso da coordenação</div>
+    <div style="font-size:12px;color:var(--cinza-e);line-height:1.6;margin-bottom:14px">Entre com a conta Google autorizada para visualizar as autoavaliações enviadas pelos residentes.</div>
+    <div id="google-auto-login"></div>
+    <button class="btn btn-secondary" onclick="fecharModal('modal-auto-login')" style="margin-top:12px">Cancelar</button>
   </div>
 </div>
 
@@ -1671,6 +1687,60 @@ function salvarAutoaval() {
 // ============================================================
 // DASHBOARD
 // ============================================================
+let AUTOAVAL_ADMIN_TOKEN='';
+let AUTOAVAL_ADMIN_DATA=[];
+const GOOGLE_CLIENT_ID='439450410940-2teog3fo9flv2hvidgop73dtsuj4okp2.apps.googleusercontent.com';
+
+function escapeDashboardHtml(valor){return String(valor??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+function autoavaliacoesEl(){return document.getElementById('dash-autoavaliacoes');}
+
+function abrirLoginAutoavaliacoes(){
+  if(!window.google||!google.accounts||!google.accounts.id){showToast('O login Google ainda está carregando. Tente novamente em instantes.','e');return;}
+  const alvo=document.getElementById('google-auto-login');
+  alvo.innerHTML='';
+  google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:receberLoginAutoavaliacoes,auto_select:false});
+  google.accounts.id.renderButton(alvo,{theme:'outline',size:'large',text:'signin_with',locale:'pt-BR',width:280});
+  document.getElementById('modal-auto-login').classList.add('show');
+}
+
+async function receberLoginAutoavaliacoes(resposta){
+  AUTOAVAL_ADMIN_TOKEN=resposta.credential;
+  fecharModal('modal-auto-login');
+  await carregarAutoavaliacoesDashboard();
+}
+
+async function carregarAutoavaliacoesDashboard(){
+  const alvo=autoavaliacoesEl();
+  if(!alvo) return;
+  if(!AUTOAVAL_ADMIN_TOKEN){
+    alvo.innerHTML='<div style="font-size:12px;color:var(--cinza-e);line-height:1.55">As respostas são protegidas. <button class="btn btn-primary" style="margin-top:10px" onclick="abrirLoginAutoavaliacoes()">Entrar para visualizar</button></div>';
+    return;
+  }
+  alvo.innerHTML='<div style="text-align:center;color:var(--cinza-e);padding:12px;font-size:12px">Carregando autoavaliações…</div>';
+  try{
+    const res=await fetch(RESIDENT_PORTAL_API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({tipo:'autoavaliacoes_admin',dados:{},token:AUTOAVAL_ADMIN_TOKEN})});
+    const dados=await res.json();
+    if(!dados.ok) throw new Error(dados.erro||'Não foi possível carregar as autoavaliações.');
+    AUTOAVAL_ADMIN_DATA=dados.autoavaliacoes||[];
+    renderAutoavaliacoesDashboard();
+  }catch(e){
+    AUTOAVAL_ADMIN_TOKEN='';
+    alvo.innerHTML=`<div class="alert aviso"><span>⚠️</span><span>${escapeDashboardHtml(e.message)}</span></div><button class="btn btn-primary" onclick="abrirLoginAutoavaliacoes()">Tentar novamente</button>`;
+  }
+}
+
+function renderAutoavaliacoesDashboard(){
+  const alvo=autoavaliacoesEl(); if(!alvo) return;
+  const itens=AUTOAVAL_ADMIN_DATA;
+  if(!itens.length){alvo.innerHTML='<div style="text-align:center;color:var(--cinza-e);padding:12px;font-size:12px">Nenhuma autoavaliação recebida ainda.</div>';return;}
+  const residentes=new Set(itens.map(a=>a.residente).filter(Boolean)).size;
+  const medias=itens.map(a=>a.media).filter(n=>typeof n==='number');
+  const media=medias.length?medias.reduce((s,n)=>s+n,0)/medias.length:null;
+  alvo.innerHTML=`<div class="dash-grid" style="margin-bottom:12px"><div class="dash-stat roxo"><div class="ds-val">${itens.length}</div><div class="ds-label">Envios</div></div><div class="dash-stat azul"><div class="ds-val">${residentes}</div><div class="ds-label">Residentes</div></div><div class="dash-stat verde"><div class="ds-val">${media===null?'–':media.toFixed(1)}</div><div class="ds-label">Média (1–4)</div></div></div>`+
+    itens.slice(0,5).map(a=>`<details style="border-top:1px solid var(--cinza-m);padding:10px 0"><summary style="cursor:pointer;font-size:12px;font-weight:700">${escapeDashboardHtml(a.residente)} · ${escapeDashboardHtml(a.ano)} <span style="float:right;color:var(--roxo)">${a.media===null?'–':a.media.toFixed(1)}</span><div style="font-size:10px;color:var(--cinza-e);font-weight:500;margin-top:3px">${escapeDashboardHtml(a.periodo)}</div></summary><div style="font-size:11px;line-height:1.55;padding:10px 2px 0"><strong>Reflexão:</strong> ${escapeDashboardHtml(a.reflexao||'Não informada.')}<br><strong>Respostas:</strong><br>${a.respostas.map(r=>`• ${escapeDashboardHtml(r.competencia)} — <strong>${escapeDashboardHtml(r.nota)}</strong>`).join('<br>')}</div></details>`).join('')+
+    (itens.length>5?`<div style="font-size:11px;color:var(--cinza-e);padding-top:8px">Exibindo os 5 envios mais recentes de ${itens.length}.</div>`:'');
+}
+
 function renderDashboard() {
   const avals=loadArr('avaliacoes');
   const residentes=[...new Set(avals.map(a=>a.residente))];
@@ -1681,6 +1751,8 @@ function renderDashboard() {
   const totalRes=['R1','R2','R3'].reduce((s,yr)=>s+Object.keys(APP.residentes[yr]||{}).length,0);
   const mediaGeral=medias.length?medias.reduce((s,m)=>s+m.media,0)/medias.length:0;
   const criticos=medias.filter(m=>m.media<5).length;
+
+  carregarAutoavaliacoesDashboard();
 
   document.getElementById('dash-stats').innerHTML=`
     <div class="dash-stat verde"><div class="ds-val">${totalRes}</div><div class="ds-label">Residentes</div></div>
