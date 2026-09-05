@@ -23,13 +23,14 @@ const supervisionResidentKey=item=>item.residenteId||JSON.stringify([item.reside
 const supervisionPreceptorKey=item=>item.preceptorId||'sem-identificacao';
 
 let supervisionDocument='avaliacoes';
-function selectSupervisionDocument(value){
-  supervisionDocument=value;closeSupervisionPdf();adminAttendanceRecords.reset();
-  supervisionEl('supervisionEvaluationsPanel').hidden=value!=='avaliacoes';
-  supervisionEl('supervisionAttendancePanel').hidden=value!=='frequencia';
-  supervisionEl('supervisionEvaluationsTab').setAttribute('aria-pressed',String(value==='avaliacoes'));
-  supervisionEl('supervisionAttendanceTab').setAttribute('aria-pressed',String(value==='frequencia'));
-  loadSupervision();
+function selectSupervisionDocument(value,load=true){
+  if(!['avaliacoes','frequencia','autoavaliacoes','modulos'].includes(value))return;
+  supervisionDocument=value;closeSupervisionPdf();adminAttendanceRecords.reset();resetSupervisionFeedback();
+  for(const [name,key] of [['Evaluations','avaliacoes'],['Attendance','frequencia'],['Self','autoavaliacoes'],['Modules','modulos']]){
+    supervisionEl('supervision'+name+'Panel').hidden=value!==key;
+    supervisionEl('supervision'+name+'Tab').setAttribute('aria-pressed',String(value===key));
+  }
+  if(load)loadSupervision();
 }
 
 async function supervisionApi(dados,tipo='avaliacoes_admin'){
@@ -58,6 +59,7 @@ function closeSupervisionPdf(){
 function signOutSupervision(){
   AUTOAVAL_ADMIN_TOKEN='';AUTOAVAL_ADMIN_DATA=[];
   adminAttendanceRecords.reset();
+  resetSupervisionFeedback();
   supervisionState.request++;supervisionState.data=[];supervisionState.filtered=[];
   closeSupervisionPdf();
   supervisionEl('supervisionControls').hidden=true;
@@ -71,6 +73,7 @@ function signOutSupervision(){
 }
 
 async function loadSupervision(){
+  if(supervisionFeedback[supervisionDocument]){supervisionState.request++;closeSupervisionPdf();return supervisionFeedback[supervisionDocument].load();}
   if(supervisionDocument==='frequencia'){supervisionState.request++;closeSupervisionPdf();return adminAttendanceRecords.load();}
   const request=++supervisionState.request;
   closeSupervisionPdf();supervisionState.data=[];supervisionState.filtered=[];

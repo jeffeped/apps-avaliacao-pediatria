@@ -11,20 +11,25 @@
 .supervision-filters input,.supervision-filters select{min-width:0;width:100%;font-size:12px}
 #supervisionStatus{margin:0 16px 12px;font-size:12px;line-height:1.6;color:var(--azul);overflow-wrap:anywhere}
 #supervisionSummary{margin:0 16px 12px;font-size:12px;font-weight:700;color:var(--verde)}
-.supervision-evaluation{overflow-wrap:anywhere}
-.supervision-evaluation h3{font-size:16px;line-height:1.4;color:var(--azul);margin-bottom:7px}
-.supervision-evaluation p{font-size:12px;line-height:1.6;margin:8px 0}
+:is(.supervision-evaluation,.supervision-feedback){overflow-wrap:anywhere}
+:is(.supervision-evaluation,.supervision-feedback) h3{font-size:16px;line-height:1.4;color:var(--azul);margin-bottom:7px}
+:is(.supervision-evaluation,.supervision-feedback) p{font-size:12px;line-height:1.6;margin:8px 0}
 .supervision-score{padding:12px;background:#eaf5ee;border-radius:8px;font-size:13px;color:var(--verde);margin:12px 0}
-.supervision-evaluation summary{font-size:12px;font-weight:700;cursor:pointer;padding:10px 0}
-.supervision-evaluation table{width:100%;border-collapse:collapse;font-size:11px;line-height:1.5;table-layout:fixed}
-.supervision-evaluation caption{text-align:left;margin:8px 0;font-weight:700}
-.supervision-evaluation th{text-align:left;background:var(--verde);color:#fff}
-.supervision-evaluation th,.supervision-evaluation td{padding:9px 7px;border-bottom:1px solid var(--cinza-m);vertical-align:top}
-.supervision-evaluation th:last-child,.supervision-evaluation td:last-child{width:50px;text-align:center;font-weight:700}
-.supervision-evaluation tbody tr:nth-child(odd){background:#f0f7f3}
+:is(.supervision-evaluation,.supervision-feedback) summary{font-size:12px;font-weight:700;cursor:pointer;padding:10px 0}
+:is(.supervision-evaluation,.supervision-feedback) table{width:100%;border-collapse:collapse;font-size:11px;line-height:1.5;table-layout:fixed}
+:is(.supervision-evaluation,.supervision-feedback) caption{text-align:left;margin:8px 0;font-weight:700}
+:is(.supervision-evaluation,.supervision-feedback) th{text-align:left;background:var(--verde);color:#fff}
+:is(.supervision-evaluation,.supervision-feedback) th,:is(.supervision-evaluation,.supervision-feedback) td{padding:9px 7px;border-bottom:1px solid var(--cinza-m);vertical-align:top}
+:is(.supervision-evaluation,.supervision-feedback) th:last-child,:is(.supervision-evaluation,.supervision-feedback) td:last-child{width:50px;text-align:center;font-weight:700}
+:is(.supervision-evaluation,.supervision-feedback) tbody tr:nth-child(odd){background:#f0f7f3}
 .supervision-comment{white-space:pre-wrap}
 #supervisionPdfPreview{scroll-margin-top:140px}
 #supervisionPdfTitle{font-size:14px;line-height:1.5;overflow-wrap:anywhere}
 #supervisionPdfFrame{width:100%;height:65vh;border:1px solid var(--cinza-m);border-radius:8px;margin-top:12px}
 #supervisionPdfDownload{text-decoration:none;text-align:center}
 #supervisionMore{display:block;margin:14px auto;width:calc(100% - 32px)}
+
+.feedback-status,.feedback-summary{margin:0 16px 12px;font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+.feedback-summary{font-weight:700;color:var(--verde)}
+.feedback-anonymous{color:var(--verde);font-weight:700}
+.feedback-more{display:block;margin:14px auto;width:calc(100% - 32px)}
