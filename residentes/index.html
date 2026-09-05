@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="admin-evaluations.js" defer></script>
 <meta name="theme-color" content="#006B3F">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -305,6 +306,7 @@ textarea{resize:none;height:80px}
   body{max-width:100%}
 }
 </style>
+<link rel="stylesheet" href="admin-evaluations.css">
 </head>
 <body>
 
@@ -332,6 +334,7 @@ textarea{resize:none;height:80px}
   </div>
   <div class="tab-bar">
     <button class="tab-btn active" data-screen="home" onclick="showScreen('home',this)"><span class="ti">🏠</span>Início</button>
+    <button class="tab-btn" data-screen="supervisao" onclick="showScreen('supervisao',this)"><span class="ti">📑</span>Supervisão</button>
     <button class="tab-btn" data-screen="turma" onclick="showScreen('turma',this)"><span class="ti">👥</span>Residentes</button>
     <button class="tab-btn" data-screen="ponto" onclick="showScreen('ponto',this)"><span class="ti">📍</span>Ponto</button>
     <button class="tab-btn" data-screen="avaliacao" onclick="showScreen('avaliacao',this)"><span class="ti">📋</span>Avaliação</button>
@@ -597,10 +600,29 @@ textarea{resize:none;height:80px}
 <!-- ============================================================ -->
 <!-- TELA: HISTÓRICO -->
 <!-- ============================================================ -->
+<div id="screen-supervisao" class="screen">
+  <div class="sec-hdr verde"><h2>📑 Avaliações dos residentes</h2><p>Consulta da supervisão · avaliações recebidas dos preceptores</p></div>
+  <div id="supervisionAccess" class="card"><div class="card-title">Acesso da supervisão</div><p class="supervision-muted">Entre com sua conta Google autorizada para consultar as avaliações de todos os residentes e as fichas PDF emitidas.</p><button class="btn btn-primary" onclick="abrirLoginAutoavaliacoes()" style="margin-top:14px">Entrar com Google</button></div>
+  <div id="supervisionControls" class="card" hidden>
+    <div class="supervision-toolbar"><button id="supervisionRefresh" class="btn btn-primary" onclick="loadSupervision()">Atualizar</button><button class="btn btn-secondary" onclick="signOutSupervision()">Sair da supervisão</button></div>
+    <div id="supervisionFilters" class="supervision-filters">
+      <div class="fg"><label for="supervisionResident">Residente</label><select id="supervisionResident" onchange="filterSupervision()"><option value="">Todos os residentes</option></select></div>
+      <div class="fg"><label for="supervisionYear">Ano da residência</label><select id="supervisionYear" onchange="filterSupervision()"><option value="">Todos os anos</option></select></div>
+      <div class="fg"><label for="supervisionPreceptor">Preceptor</label><select id="supervisionPreceptor" onchange="filterSupervision()"><option value="">Todos os preceptores</option></select></div>
+      <div class="fg"><label for="supervisionModule">Módulo</label><select id="supervisionModule" onchange="filterSupervision()"><option value="">Todos os módulos</option></select></div>
+      <div class="fg"><label for="supervisionPeriod">Período avaliado</label><select id="supervisionPeriod" onchange="filterSupervision()"><option value="">Todos os períodos</option></select></div>
+      <div class="fg"><label for="supervisionStart">Avaliações desde</label><input type="date" id="supervisionStart" onchange="filterSupervision()"></div>
+      <div class="fg"><label for="supervisionEnd">Até</label><input type="date" id="supervisionEnd" onchange="filterSupervision()"></div>
+    </div><button class="btn btn-secondary" onclick="resetSupervisionFilters()" style="margin-top:12px">Limpar filtros</button>
+  </div>
+  <p id="supervisionStatus" role="status" aria-live="polite"></p><p id="supervisionSummary" role="status" aria-live="polite"></p>
+  <div id="supervisionList"></div><button id="supervisionMore" class="btn btn-secondary" hidden onclick="moreSupervision()">Mostrar mais avaliações</button>
+  <div id="supervisionPdfPreview" class="card" hidden><h3 id="supervisionPdfTitle">Ficha de avaliação</h3><div class="supervision-actions"><a id="supervisionPdfDownload" class="btn btn-primary">Baixar PDF</a><button class="btn btn-secondary" onclick="closeSupervisionPdf()">Fechar PDF</button></div><iframe id="supervisionPdfFrame" title="Ficha de avaliação do residente em PDF" src="about:blank"></iframe><p class="supervision-muted">Se a visualização não abrir no celular, use Baixar PDF.</p></div>
+</div>
 <div id="screen-historico" class="screen">
   <div class="sec-hdr azul">
     <h2>📊 Histórico</h2>
-    <p>Todas as avaliações registradas</p>
+    <p>Avaliações registradas neste aparelho</p>
   </div>
   <div class="card">
     <div class="card-title">Filtros</div>
@@ -801,8 +823,9 @@ textarea{resize:none;height:80px}
 <div id="screen-dashboard" class="screen">
   <div class="sec-hdr escuro">
     <h2>📈 Dashboard</h2>
-    <p>Visão consolidada do programa</p>
+    <p>Indicadores locais e consultas da coordenação</p>
   </div>
+  <div class="card"><div class="card-title">📑 Avaliações dos residentes</div><p class="supervision-muted">Consulte as avaliações recebidas de todos os preceptores, com notas, comentários e fichas PDF.</p><button class="btn btn-primary" onclick="showScreen('supervisao')" style="margin-top:12px">Abrir supervisão</button></div>
   <div class="card">
     <div class="card-title">Indicadores Gerais</div>
     <div class="dash-grid" id="dash-stats"></div>
@@ -987,7 +1010,7 @@ textarea{resize:none;height:80px}
   <div class="modal-box">
     <div class="modal-handle"></div>
     <div class="modal-title">🔒 Acesso da coordenação</div>
-    <div style="font-size:12px;color:var(--cinza-e);line-height:1.6;margin-bottom:14px">Entre com a conta Google autorizada para visualizar as autoavaliações enviadas pelos residentes.</div>
+    <div style="font-size:12px;color:var(--cinza-e);line-height:1.6;margin-bottom:14px">Entre com a conta Google autorizada para consultar as avaliações e autoavaliações dos residentes.</div>
     <div id="google-auto-login"></div>
     <button class="btn btn-secondary" onclick="fecharModal('modal-auto-login')" style="margin-top:12px">Cancelar</button>
   </div>
@@ -1121,6 +1144,8 @@ function showScreen(name, btn) {
   if(name==='turma') renderTurma();
   if(name==='config') restoreConfig();
   if(name==='historico') renderHistorico();
+  if(name==='supervisao') loadSupervision();
+  else closeSupervisionPdf();
   if(name==='dashboard') renderDashboard();
   if(name==='autoaval') renderAutoCompetencias();
   if(name==='ponto') { renderPontoResidentes(); renderPonto(); }
@@ -1706,7 +1731,8 @@ function abrirLoginAutoavaliacoes(){
 async function receberLoginAutoavaliacoes(resposta){
   AUTOAVAL_ADMIN_TOKEN=resposta.credential;
   fecharModal('modal-auto-login');
-  await carregarAutoavaliacoesDashboard();
+  if(document.getElementById('screen-supervisao').classList.contains('active')) await loadSupervision();
+  else await carregarAutoavaliacoesDashboard();
 }
 
 async function carregarAutoavaliacoesDashboard(){
@@ -1717,13 +1743,16 @@ async function carregarAutoavaliacoesDashboard(){
     return;
   }
   alvo.innerHTML='<div style="text-align:center;color:var(--cinza-e);padding:12px;font-size:12px">Carregando autoavaliações…</div>';
+  const requestToken=AUTOAVAL_ADMIN_TOKEN;
   try{
     const res=await fetch(RESIDENT_PORTAL_API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({tipo:'autoavaliacoes_admin',dados:{},token:AUTOAVAL_ADMIN_TOKEN})});
     const dados=await res.json();
+    if(requestToken!==AUTOAVAL_ADMIN_TOKEN)return;
     if(!dados.ok) throw new Error(dados.erro||'Não foi possível carregar as autoavaliações.');
     AUTOAVAL_ADMIN_DATA=dados.autoavaliacoes||[];
     renderAutoavaliacoesDashboard();
   }catch(e){
+    if(requestToken!==AUTOAVAL_ADMIN_TOKEN)return;
     AUTOAVAL_ADMIN_TOKEN='';
     alvo.innerHTML=`<div class="alert aviso"><span>⚠️</span><span>${escapeDashboardHtml(e.message)}</span></div><button class="btn btn-primary" onclick="abrirLoginAutoavaliacoes()">Tentar novamente</button>`;
   }
