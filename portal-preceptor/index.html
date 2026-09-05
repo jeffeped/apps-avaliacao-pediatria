@@ -13,6 +13,9 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="vendor/pdf-lib.min.js" defer></script>
+  <script src="evaluation-pdf.js" defer></script>
+  <script src="evaluation-exports.js" defer></script>
   <style>
     :root{
       --green:#007a4d;--green-dark:#005e3b;--green-soft:#e8f5ef;
@@ -84,6 +87,8 @@
     .apc-intro{background:var(--blue-soft);border-left:5px solid var(--blue);color:#334d63;font-size:14px;line-height:1.55}.apc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.apc-card{margin:0;border-top:5px solid var(--green)}.apc-card:nth-child(2n){border-top-color:var(--blue)}.apc-card h3{font-size:16px;line-height:1.4;color:var(--blue);margin-bottom:9px}.apc-card p{font-size:13px;line-height:1.5;color:#43546a;margin-bottom:0}.apc-tag{display:inline-block;background:var(--green-soft);color:var(--green-dark);border-radius:99px;padding:6px 10px;margin-top:12px;font-size:12px;font-weight:800}
     .schedule-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.schedule-person{border:1px solid var(--line);border-radius:13px;padding:14px;background:#fff}.schedule-person h3{color:var(--blue);margin-bottom:6px}.schedule-person p{font-size:13px;line-height:1.5;margin:3px 0}.schedule-person small{color:var(--muted)}.schedule-filters{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}.schedule-list{display:grid;gap:10px}.schedule-row{display:grid;grid-template-columns:1.1fr 1.2fr 1fr 1fr;gap:12px;border-bottom:1px solid var(--line);padding:12px 0;font-size:13px;line-height:1.4}.schedule-row:last-child{border-bottom:0}.schedule-row b{display:block;color:var(--blue)}
     .location-note{background:var(--blue-soft);border-left:5px solid var(--blue);font-size:13px;line-height:1.5;color:#334d63}.location-summary{font-size:13px;line-height:1.55;background:#f8fafb;border:1px solid var(--line);border-radius:11px;padding:13px;margin-top:14px}.location-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.location-actions button{width:auto;margin:0}.location-actions .secondary{background:#fff;color:var(--blue);border:1px solid var(--blue)}
+    .evaluation-export-filters{display:grid;grid-template-columns:1fr 1.5fr;gap:12px;margin:16px 0}.evaluation-export-actions{display:flex;gap:10px;flex-wrap:wrap}.evaluation-export-status{margin:12px 0 0}.evaluation-export-refresh{border:1px solid var(--line);background:#fff;color:var(--blue);border-radius:10px;padding:10px 14px;font-weight:700}
+    @media(max-width:600px){.evaluation-export-filters{grid-template-columns:1fr}.evaluation-export-actions button{width:100%}}
     footer{text-align:center;color:var(--muted);font-size:12px;padding:5px 20px 25px}
     .toast{position:fixed;right:22px;bottom:22px;z-index:20;background:var(--ink);color:#fff;border-radius:11px;padding:12px 16px;font-size:13px;box-shadow:0 10px 30px #1522383b;transform:translateY(25px);opacity:0;pointer-events:none;transition:.2s}.toast.show{transform:none;opacity:1}.toast.error-toast{background:var(--red)}
     @media(max-width:780px){
@@ -187,7 +192,21 @@
       <div class="card hero"><div class="hero-copy"><div class="eyebrow">Avaliação formativa</div><h2>Avaliar residente</h2><p class="muted">Registro restrito aos residentes vinculados aos seus módulos.</p></div></div>
       <div class="card"><div class="field"><label for="evalResident">Residente</label><select id="evalResident"><option value="">Carregando residentes…</option></select></div><div class="field"><label for="evalPeriod">Período</label><input id="evalPeriod" placeholder="Ex.: 1º módulo / agosto de 2026"></div><div class="field"><label for="evalDate">Data</label><input id="evalDate" type="date"></div></div>
       <div class="card"><div id="evaluationItems"></div></div>
-      <div class="card"><div class="final-score"><div><div class="metric-label">Média final</div><div class="muted" id="evalConcept">—</div></div><b id="evalFinal">—</b></div><div class="field" style="margin-top:16px"><label for="evalObs">Observações do preceptor</label><textarea id="evalObs" placeholder="Comentários, pontos fortes e oportunidades de melhoria..."></textarea></div><button id="saveEvaluation" class="submit" onclick="saveEvaluation()">Salvar avaliação</button><button class="secondary" style="margin-top:10px" onclick="exportarAvaliacoes()">↓ Exportar minhas avaliações (CSV)</button></div>
+      <div class="card"><div class="final-score"><div><div class="metric-label">Média final</div><div class="muted" id="evalConcept">—</div></div><b id="evalFinal">—</b></div><div class="field" style="margin-top:16px"><label for="evalObs">Observações do preceptor</label><textarea id="evalObs" maxlength="300" aria-describedby="evalObsHint" placeholder="Comentário breve: pontos fortes e oportunidades de melhoria (até 300 caracteres)."></textarea><div id="evalObsHint" class="muted">Até 300 caracteres, para manter a ficha em uma página A4.</div></div><button id="saveEvaluation" class="submit" onclick="saveEvaluation()">Salvar avaliação</button></div>
+      <div class="card">
+        <h2>Exportar avaliações salvas</h2>
+        <p class="muted">Baixe suas avaliações em CSV para abrir no Excel ou em PDF com a ficha de cada avaliação. Salve a avaliação acima para incluí-la na exportação.</p>
+        <div class="evaluation-export-filters">
+          <div class="field"><label for="exportEvalResident">Residente</label><select id="exportEvalResident" onchange="renderExportEvaluationOptions()" disabled><option value="">Todos os residentes</option></select></div>
+          <div class="field"><label for="exportEvaluation">Avaliação</label><select id="exportEvaluation" onchange="updateEvaluationExportStatus()" disabled><option value="">Todas as avaliações</option></select></div>
+        </div>
+        <div class="evaluation-export-actions">
+          <button id="exportEvaluationsCsv" class="secondary" onclick="exportarAvaliacoes()" disabled>↓ Exportar CSV (Excel)</button>
+          <button id="exportEvaluationsPdf" class="primary" onclick="exportarAvaliacoesPdf()" disabled>↓ Baixar fichas em PDF</button>
+          <button id="refreshEvaluationExports" class="evaluation-export-refresh" onclick="loadEvaluationExports()">Atualizar lista</button>
+        </div>
+        <p id="evaluationExportStatus" class="muted evaluation-export-status" role="status" aria-live="polite">Carregando avaliações salvas…</p>
+      </div>
     </section>
 
     <section id="view-feedback" class="content view hide">
@@ -279,7 +298,7 @@ function showView(view){
   document.getElementById('view-'+view).classList.remove('hide');
   document.getElementById('tab-'+view).classList.add('active');
   if(view==='validacoes'&&!tasksLoaded)loadTasks();
-  if(view==='avaliacao')loadEvaluationResidents();
+  if(view==='avaliacao'){loadEvaluationResidents();loadEvaluationExports()}
   if(view==='apcs')renderApcs();
   if(view==='frequencia')loadAttendance();
   if(view==='escala')loadSchedule();
@@ -321,8 +340,7 @@ function setEvaluationScore(i,v){evaluationScores[i]=Number(v);document.getEleme
 function evaluationDomains(){const avg=k=>{const a=EVALUATION_ITEMS.map((x,i)=>x[2]===k?evaluationScores[i]:null).filter(x=>x!==null);return a.reduce((s,x)=>s+x,0)/a.length};return{conhecimentos:avg('conhecimentos'),habilidades:avg('habilidades'),atitudes:avg('atitudes')}}
 function updateEvaluationSummary(){const d=evaluationDomains(),f=(d.conhecimentos+d.habilidades+d.atitudes)/3;document.getElementById('evalFinal').textContent=f.toFixed(1);document.getElementById('evalConcept').textContent=f>=9?'Ótimo':f>=7?'Bom':f>=5?'Regular':'Insatisfatório'}
 async function loadEvaluationResidents(){if(evaluationResidents.length)return;try{const r=await api('residentes_preceptor');evaluationResidents=r.residentes||[];document.getElementById('evalResident').innerHTML='<option value="">Selecione o residente</option>'+evaluationResidents.map(x=>'<option value="'+escAttr(x.id)+'">'+esc(x.nome)+' · '+esc(x.ano)+' · '+esc(x.modulo)+'</option>').join('')}catch(e){toast(e.message,true)}}
-async function saveEvaluation(){const residenteId=document.getElementById('evalResident').value,periodo=document.getElementById('evalPeriod').value.trim();if(!residenteId||!periodo){toast('Selecione o residente e informe o período.',true);return}const itens=EVALUATION_ITEMS.map((item,i)=>({codigo:'I'+String(i+1).padStart(2,'0'),dominio:item[2],texto:item[1],escore:evaluationScores[i]}));const b=document.getElementById('saveEvaluation'),txt=b.textContent;b.disabled=true;b.textContent='Salvando…';try{await api('avaliacao_preceptor',{residenteId,periodo,data:document.getElementById('evalDate').value,dominios:evaluationDomains(),itens,obs:document.getElementById('evalObs').value.trim()});toast('Avaliação registrada com sucesso.');document.getElementById('evalPeriod').value='';document.getElementById('evalObs').value='';evaluationScores=[7,7,7,7,7,7,7,7,7];renderEvaluation()}catch(e){toast(e.message,true)}finally{b.disabled=false;b.textContent=txt}}
-async function exportarAvaliacoes(){try{const r=await api('exportacoes_preceptor');const linhas=(r.avaliacoes||[]).map(a=>{const porCodigo={};(a.itens||[]).forEach(i=>porCodigo[i.codigo]=i.escore);return[a.data,a.residente,a.ano,a.modulo,a.periodo,a.conhecimentos,a.habilidades,a.atitudes,a.media,a.conceito,...EVALUATION_ITEMS.map((_,i)=>porCodigo['I'+String(i+1).padStart(2,'0')]??''),a.observacoes]});baixarCsv('avaliacoes-preceptor-'+manausDate()+'.csv',['Data','Residente','Ano','Módulo','Período','Conhecimentos','Habilidades','Atitudes','Média final','Conceito',...EVALUATION_ITEMS.map((_,i)=>'Item '+String(i+1).padStart(2,'0')),'Observações'],linhas)}catch(e){toast(e.message,true)}}
+async function saveEvaluation(){if(document.getElementById('evalObs').value.trim().length>300){toast('Use um comentário breve, com até 300 caracteres.',true);return}const residenteId=document.getElementById('evalResident').value,periodo=document.getElementById('evalPeriod').value.trim();if(!residenteId||!periodo){toast('Selecione o residente e informe o período.',true);return}const itens=EVALUATION_ITEMS.map((item,i)=>({codigo:'I'+String(i+1).padStart(2,'0'),dominio:item[2],texto:item[1],escore:evaluationScores[i]}));const b=document.getElementById('saveEvaluation'),txt=b.textContent;b.disabled=true;b.textContent='Salvando…';try{await api('avaliacao_preceptor',{residenteId,periodo,data:document.getElementById('evalDate').value,dominios:evaluationDomains(),itens,obs:document.getElementById('evalObs').value.trim()});toast('Avaliação registrada com sucesso.');document.getElementById('evalPeriod').value='';document.getElementById('evalObs').value='';evaluationScores=[7,7,7,7,7,7,7,7,7];renderEvaluation();await loadEvaluationExports()}catch(e){toast(e.message,true)}finally{b.disabled=false;b.textContent=txt}}
 
 function manausDate(){
   const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Manaus',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
