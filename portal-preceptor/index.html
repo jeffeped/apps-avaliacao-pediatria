@@ -195,7 +195,7 @@
       <div class="card"><div class="final-score"><div><div class="metric-label">Média final</div><div class="muted" id="evalConcept">—</div></div><b id="evalFinal">—</b></div><div class="field" style="margin-top:16px"><label for="evalObs">Observações do preceptor</label><textarea id="evalObs" maxlength="300" aria-describedby="evalObsHint" placeholder="Comentário breve: pontos fortes e oportunidades de melhoria (até 300 caracteres)."></textarea><div id="evalObsHint" class="muted">Até 300 caracteres, para manter a ficha em uma página A4.</div></div><button id="saveEvaluation" class="submit" onclick="saveEvaluation()">Salvar avaliação</button></div>
       <div class="card">
         <h2>Exportar avaliações salvas</h2>
-        <p class="muted">Baixe suas avaliações em CSV para abrir no Excel ou em PDF com a ficha de cada avaliação. Salve a avaliação acima para incluí-la na exportação.</p>
+        <p class="muted">Baixe suas avaliações em CSV para abrir no Excel ou em PDF. Ao emitir o PDF, seu nome e e-mail identificam a ficha, e uma cópia fica disponível no portal do respectivo residente. Salve a avaliação acima para incluí-la na exportação.</p>
         <div class="evaluation-export-filters">
           <div class="field"><label for="exportEvalResident">Residente</label><select id="exportEvalResident" onchange="renderExportEvaluationOptions()" disabled><option value="">Todos os residentes</option></select></div>
           <div class="field"><label for="exportEvaluation">Avaliação</label><select id="exportEvaluation" onchange="updateEvaluationExportStatus()" disabled><option value="">Todas as avaliações</option></select></div>

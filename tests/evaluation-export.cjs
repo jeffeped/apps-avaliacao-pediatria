@@ -14,13 +14,15 @@ const inline = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match=>ma
 new vm.Script(inline);
 const criteria = Function('return '+html.match(/const EVALUATION_ITEMS=(\[.*\]);/)[1])();
 const fixture = (name, year, date, obs='') => ({
+  id:name+'-'+date,residenteId:'r-'+name,
   residente:name,ano:year,data:date,modulo:'Enfermaria de Pediatria',periodo:'Agosto de 2026',
   conhecimentos:0,habilidades:9,atitudes:8,media:'5.7',conceito:'Regular',observacoes:obs,
   itens:criteria.map((item,i)=>({codigo:'I'+String(i+1).padStart(2,'0'),texto:item[1],escore:i?8:0})).reverse()
 });
 let evaluations = [fixture('Ana de Souza','R1','2026-09-04','Observação com acentuação: ação, prevenção, família.'),
   fixture('Ana de Souza','R1','2026-08-04'),fixture('Bruno Lima','R2','2026-09-03')];
-let apiFails=false, logoFails=false, apiCalls=0;
+let apiFails=false, logoFails=false, apiCalls=0,publishFails=false;
+const publications=[];
 const server = http.createServer((req,res)=>{
   const requested = path.resolve(root, '.'+decodeURIComponent(req.url.split('?')[0]));
   if (!requested.startsWith(root+path.sep)) {res.writeHead(403);res.end();return;}
@@ -45,6 +47,10 @@ const server = http.createServer((req,res)=>{
       let payload={ok:true};
       if (body.tipo==='exportacoes_preceptor') payload=apiFails?{ok:false,erro:'Falha simulada'}:{ok:true,avaliacoes:evaluations};
       if (body.tipo==='residentes_preceptor') payload={ok:true,residentes:[{id:'TESTE',nome:'Ana de Souza',ano:'R1',modulo:'Enfermaria'}]};
+      if (body.tipo==='publicar_ficha_preceptor') {
+        if(publishFails)payload={ok:false,erro:'Falha simulada ao disponibilizar'};
+        else {publications.push(body.dados);payload={ok:true,disponivel:true};}
+      }
       await route.fulfill({contentType:'application/json',body:JSON.stringify(payload)});
     });
     await page.route('**/assets/uea-logo-verde.pdf',route=>logoFails?route.fulfill({status:503,body:'Falha simulada'}):route.continue());
@@ -53,6 +59,7 @@ const server = http.createServer((req,res)=>{
       document.getElementById('login').classList.add('hide');
       document.getElementById('app').classList.remove('hide');
       document.getElementById('name').textContent='Preceptor de demonstração';
+      profile={papel:'preceptor',nome:'Preceptor de teste',email:'preceptor@example.test'};
       showView('avaliacao');
     });
     await page.getByText('3 avaliações selecionadas.',{exact:false}).waitFor();
@@ -69,6 +76,8 @@ const server = http.createServer((req,res)=>{
     const pdf=await downloadPdf;
     assert.match(pdf.suggestedFilename(),/^ficha-avaliacao-ana-de-souza-\d{4}-\d{2}-\d{2}\.pdf$/);
     await pdf.saveAs(path.join(out,'selected.pdf'));
+    assert.equal(publications.length,1);
+    assert.equal(Buffer.compare(Buffer.from(publications[0].pdfBase64,'base64'),fs.readFileSync(path.join(out,'selected.pdf'))),0,'O residente deve receber a mesma cópia do PDF individual');
     const downloadCsv=page.waitForEvent('download');
     await page.locator('#exportEvaluationsCsv').click();
     const csv=await downloadCsv;
@@ -85,6 +94,17 @@ const server = http.createServer((req,res)=>{
     const downloadAll=page.waitForEvent('download');
     await page.locator('#exportEvaluationsPdf').click();
     await (await downloadAll).saveAs(path.join(out,'all.pdf'));
+    assert.equal(publications.length,4);
+    for(const publication of publications.slice(1)) {
+      const individual=await PDFDocument.load(Buffer.from(publication.pdfBase64,'base64'));
+      assert.equal(individual.getPageCount(),1,'O residente nunca deve receber as fichas do lote inteiro');
+    }
+    publishFails=true;
+    const downloadPending=page.waitForEvent('download');
+    await page.locator('#exportEvaluationsPdf').click();
+    await (await downloadPending).saveAs(path.join(out,'pending-copy.pdf'));
+    await page.getByText('Não foi possível disponibilizar 3 ficha(s)',{exact:false}).waitFor();
+    publishFails=false;
 
     logoFails=true;
     await page.locator('#exportEvaluationsPdf').click();
@@ -162,6 +182,26 @@ const server = http.createServer((req,res)=>{
     await page.locator('#exportEvaluationsPdf').scrollIntoViewIfNeeded();
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,'O portal deve caber na tela do celular');
     await page.screenshot({path:path.join(out,'mobile-export.png')});
+    const residentPage=await context.newPage();
+    await residentPage.route('https://accounts.google.com/**',route=>route.fulfill({contentType:'application/javascript',body:'window.google={accounts:{id:{initialize(){},renderButton(){},disableAutoSelect(){}}}}'}));
+    await residentPage.route('https://script.google.com/**',async route=>{
+      const body=route.request().postDataJSON();
+      const payload=body.dados.acao==='baixar'?{ok:true,id:publications[0].avaliacaoId,nome:'ficha.pdf',pdfBase64:publications[0].pdfBase64}:{ok:true,fichas:[{id:publications[0].avaliacaoId,data:'2026-09-04',modulo:'Pediatria',periodo:'Agosto',preceptor:'Preceptor de teste',media:8,conceito:'Bom'}]};
+      await route.fulfill({contentType:'application/json',body:JSON.stringify(payload)});
+    });
+    await residentPage.goto('http://127.0.0.1:'+server.address().port+'/portal-residente/');
+    await residentPage.evaluate(()=>{document.getElementById('login').classList.add('hidden');document.getElementById('app').classList.remove('hidden');showPage('avaliacoes',document.querySelector('[data-page="avaliacoes"]'));});
+    await residentPage.getByRole('button',{name:'Visualizar ficha',exact:true}).click();
+    await residentPage.waitForFunction(()=>document.getElementById('residentPdfFrame').src.startsWith('blob:'));
+    const residentDownload=residentPage.waitForEvent('download');
+    await residentPage.getByRole('link',{name:'Baixar PDF',exact:true}).click();
+    await (await residentDownload).saveAs(path.join(out,'resident-copy.pdf'));
+    assert.equal(Buffer.compare(fs.readFileSync(path.join(out,'resident-copy.pdf')),fs.readFileSync(path.join(out,'selected.pdf'))),0);
+    await residentPage.getByRole('button',{name:'Fechar',exact:true}).click();
+    assert.equal(await residentPage.locator('#residentPdfPreview').isVisible(),false);
+    await residentPage.setViewportSize({width:390,height:844});
+    assert.equal(await residentPage.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
+    await residentPage.screenshot({path:path.join(out,'resident-evaluations-mobile.png')});
     assert.deepEqual(errors,[]);
     console.log('OK: uma página A4 por ficha, comentários até 300 caracteres, data e local, assinatura digital vazia, CSV completo, filtros, erros recuperáveis, atualização após salvar e celular.');
   } finally {await browser.close();server.close();}

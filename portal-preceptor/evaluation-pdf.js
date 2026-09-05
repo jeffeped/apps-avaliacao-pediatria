@@ -122,17 +122,29 @@
       y += 10;
       text(placeDate(evaluation.data), margin, y, 10, regular, ink);
       y += 22;
-      text('ASSINATURA DIGITAL DO PRECEPTOR', margin, y, 9, bold, green);
+      const identityWidth = 276, fieldX = margin+296, fieldWidth = content-296;
+      text('PRECEPTOR RESPONSÁVEL', margin, y, 9, bold, green);
+      text('ASSINATURA DIGITAL', fieldX, y, 9, bold, green);
+      const preceptor = options.preceptor || {};
+      let nameLines, emailLines, identitySize = 10;
+      for (; identitySize >= 7; identitySize -= .5) {
+        nameLines = wrap(preceptor.nome || 'Nome do preceptor', identityWidth, identitySize, bold);
+        emailLines = wrap(preceptor.email || 'E-mail do preceptor', identityWidth, identitySize-1);
+        if ((nameLines.length+emailLines.length)*(identitySize+1)+2 <= 40) break;
+      }
+      if (identitySize < 7) throw new Error('O nome ou e-mail do preceptor é extenso demais para o campo de identificação.');
+      lines(nameLines, margin, y+17, identitySize, bold, ink, identitySize+1);
+      lines(emailLines, margin, y+19+nameLines.length*(identitySize+1), identitySize-1, regular, muted, identitySize+1);
       const fieldHeight = 40, fieldY = height-y-17-fieldHeight;
       const appearance = doc.context.register(doc.context.flateStream(
-        'q 0.79 0.85 0.81 RG 0.6 w 0.3 0.3 '+(content-.6)+' '+(fieldHeight-.6)+' re S Q',
-        {Type:'XObject',Subtype:'Form',BBox:[0,0,content,fieldHeight],Resources:{}}
+        'q 0.79 0.85 0.81 RG 0.6 w 0.3 0.3 '+(fieldWidth-.6)+' '+(fieldHeight-.6)+' re S Q',
+        {Type:'XObject',Subtype:'Form',BBox:[0,0,fieldWidth,fieldHeight],Resources:{}}
       ));
       const field = doc.context.register(doc.context.obj({
         Type:'Annot',Subtype:'Widget',FT:'Sig',
         T:PDFHexString.fromText('assinatura_preceptor_'+(index+1)),
         TU:PDFHexString.fromText('Assinatura digital do preceptor - ficha '+(index+1)),
-        Rect:[margin,fieldY,width-margin,fieldY+fieldHeight],
+        Rect:[fieldX,fieldY,width-margin,fieldY+fieldHeight],
         P:page.ref,F:4,Ff:0,AP:{N:appearance}
       }));
       form.acroForm.addField(field);
