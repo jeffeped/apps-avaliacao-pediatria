@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="admin-evaluations.js" defer></script>
+<script src="admin-evaluations.js" defer></script><script src="../shared/attendance-records.js" defer></script><link rel="stylesheet" href="../shared/attendance-records.css">
 <meta name="theme-color" content="#006B3F">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -601,6 +601,8 @@ textarea{resize:none;height:80px}
 <!-- TELA: HISTÓRICO -->
 <!-- ============================================================ -->
 <div id="screen-supervisao" class="screen">
+  <div class="supervision-documents" aria-label="Documentos da supervisão"><button id="supervisionEvaluationsTab" aria-pressed="true" onclick="selectSupervisionDocument('avaliacoes')">Avaliações</button><button id="supervisionAttendanceTab" aria-pressed="false" onclick="selectSupervisionDocument('frequencia')">Frequência mensal</button></div>
+  <div id="supervisionEvaluationsPanel">
   <div class="sec-hdr verde"><h2>📑 Avaliações dos residentes</h2><p>Consulta da supervisão · avaliações recebidas dos preceptores</p></div>
   <div id="supervisionAccess" class="card"><div class="card-title">Acesso da supervisão</div><p class="supervision-muted">Entre com sua conta Google autorizada para consultar as avaliações de todos os residentes e as fichas PDF emitidas.</p><button class="btn btn-primary" onclick="abrirLoginAutoavaliacoes()" style="margin-top:14px">Entrar com Google</button></div>
   <div id="supervisionControls" class="card" hidden>
@@ -618,6 +620,7 @@ textarea{resize:none;height:80px}
   <p id="supervisionStatus" role="status" aria-live="polite"></p><p id="supervisionSummary" role="status" aria-live="polite"></p>
   <div id="supervisionList"></div><button id="supervisionMore" class="btn btn-secondary" hidden onclick="moreSupervision()">Mostrar mais avaliações</button>
   <div id="supervisionPdfPreview" class="card" hidden><h3 id="supervisionPdfTitle">Ficha de avaliação</h3><div class="supervision-actions"><a id="supervisionPdfDownload" class="btn btn-primary">Baixar PDF</a><button class="btn btn-secondary" onclick="closeSupervisionPdf()">Fechar PDF</button></div><iframe id="supervisionPdfFrame" title="Ficha de avaliação do residente em PDF" src="about:blank"></iframe><p class="supervision-muted">Se a visualização não abrir no celular, use Baixar PDF.</p></div>
+</div><div id="supervisionAttendancePanel" hidden><div id="adminAttendanceRecords"></div></div>
 </div>
 <div id="screen-historico" class="screen">
   <div class="sec-hdr azul">
@@ -825,7 +828,7 @@ textarea{resize:none;height:80px}
     <h2>📈 Dashboard</h2>
     <p>Indicadores locais e consultas da coordenação</p>
   </div>
-  <div class="card"><div class="card-title">📑 Avaliações dos residentes</div><p class="supervision-muted">Consulte as avaliações recebidas de todos os preceptores, com notas, comentários e fichas PDF.</p><button class="btn btn-primary" onclick="showScreen('supervisao')" style="margin-top:12px">Abrir supervisão</button></div>
+  <div class="card"><div class="card-title">📑 Supervisão dos residentes</div><p class="supervision-muted">Consulte as avaliações e as fichas mensais de frequência emitidas pelos preceptores.</p><button class="btn btn-primary" onclick="showScreen('supervisao')" style="margin-top:12px">Abrir supervisão</button></div>
   <div class="card">
     <div class="card-title">Indicadores Gerais</div>
     <div class="dash-grid" id="dash-stats"></div>
@@ -1145,7 +1148,7 @@ function showScreen(name, btn) {
   if(name==='config') restoreConfig();
   if(name==='historico') renderHistorico();
   if(name==='supervisao') loadSupervision();
-  else closeSupervisionPdf();
+  else {closeSupervisionPdf();adminAttendanceRecords.reset();}
   if(name==='dashboard') renderDashboard();
   if(name==='autoaval') renderAutoCompetencias();
   if(name==='ponto') { renderPontoResidentes(); renderPonto(); }

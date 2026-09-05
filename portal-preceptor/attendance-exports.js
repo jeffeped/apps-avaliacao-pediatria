@@ -54,8 +54,17 @@ async function exportAttendancePdf(){
     const response=await fetch('./assets/uea-logo-verde.pdf');if(!response.ok)throw new Error('Não foi possível carregar a logo da UEA.');
     const bytes=await AttendancePDF.create(result,residenteId,await response.arrayBuffer());
     const resident=result.residentes.find(r=>r.id===residenteId),name=String(resident.nome).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,'-').replace(/^-|-$/g,'').toLowerCase().slice(0,80);
+    let publicationError='';
+    const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),30000);
+    status.textContent='Disponibilizando a cópia ao residente e à supervisão…';
+    try{
+      const pdfBase64=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.onerror=()=>reject(new Error('Não foi possível preparar a cópia.'));reader.readAsDataURL(new Blob([bytes],{type:'application/pdf'}));});
+      const saved=await api('publicar_frequencia_preceptor',{mes,residenteId,referencia:result.referencia,pdfBase64},controller.signal);
+      if(!saved.disponivel)throw new Error('O serviço não confirmou a disponibilização da cópia.');
+    }catch(error){publicationError=error.name==='AbortError'?'O serviço demorou para confirmar a cópia.':error.message;}finally{clearTimeout(timeout);}
     const url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'})),link=document.createElement('a');link.href=url;link.download='frequencia-'+name+'-'+mes+'.pdf';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
-    status.textContent='Ficha mensal emitida com o nome e e-mail de '+result.preceptor.nome+'.';toast('Ficha de frequência mensal gerada.');
+    status.textContent=publicationError?'PDF gerado. Cópia pendente para o residente e a supervisão. '+publicationError+' Emita novamente para tentar disponibilizar a cópia.':'Ficha mensal emitida por '+result.preceptor.nome+' e disponível no portal do residente e na Supervisão do ADM.';
+    toast(publicationError?'PDF gerado; cópia pendente nos portais.':'Ficha disponível para o residente e a supervisão.',!!publicationError);
   }catch(error){status.textContent='Não foi possível emitir a ficha. '+error.message;toast(error.message,true);}
   finally{attendanceMonthlyBusy=false;button.textContent=label;[month,select,button,document.getElementById('refreshAttendanceMonth')].forEach(el=>el.disabled=false);}
 }

@@ -22,10 +22,20 @@ function supervisionScore(value){
 const supervisionResidentKey=item=>item.residenteId||JSON.stringify([item.residente,item.ano]);
 const supervisionPreceptorKey=item=>item.preceptorId||'sem-identificacao';
 
-async function supervisionApi(dados){
+let supervisionDocument='avaliacoes';
+function selectSupervisionDocument(value){
+  supervisionDocument=value;closeSupervisionPdf();adminAttendanceRecords.reset();
+  supervisionEl('supervisionEvaluationsPanel').hidden=value!=='avaliacoes';
+  supervisionEl('supervisionAttendancePanel').hidden=value!=='frequencia';
+  supervisionEl('supervisionEvaluationsTab').setAttribute('aria-pressed',String(value==='avaliacoes'));
+  supervisionEl('supervisionAttendanceTab').setAttribute('aria-pressed',String(value==='frequencia'));
+  loadSupervision();
+}
+
+async function supervisionApi(dados,tipo='avaliacoes_admin'){
   const controller=new AbortController(), timeout=setTimeout(()=>controller.abort(),30000);
   try{
-    const response=await fetch(RESIDENT_PORTAL_API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({tipo:'avaliacoes_admin',token:AUTOAVAL_ADMIN_TOKEN,dados}),signal:controller.signal});
+    const response=await fetch(RESIDENT_PORTAL_API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({tipo,token:AUTOAVAL_ADMIN_TOKEN,dados}),signal:controller.signal});
     if(!response.ok)throw new Error('Não foi possível conectar ao serviço.');
     const result=await response.json();
     if(!result.ok){const error=new Error(result.erro||'Não foi possível concluir a consulta.');error.accessDenied=result.codigo==='ACESSO_NEGADO';throw error;}
@@ -47,6 +57,7 @@ function closeSupervisionPdf(){
 
 function signOutSupervision(){
   AUTOAVAL_ADMIN_TOKEN='';AUTOAVAL_ADMIN_DATA=[];
+  adminAttendanceRecords.reset();
   supervisionState.request++;supervisionState.data=[];supervisionState.filtered=[];
   closeSupervisionPdf();
   supervisionEl('supervisionControls').hidden=true;
@@ -60,6 +71,7 @@ function signOutSupervision(){
 }
 
 async function loadSupervision(){
+  if(supervisionDocument==='frequencia'){supervisionState.request++;closeSupervisionPdf();return adminAttendanceRecords.load();}
   const request=++supervisionState.request;
   closeSupervisionPdf();supervisionState.data=[];supervisionState.filtered=[];
   supervisionEl('supervisionList').innerHTML='';supervisionEl('supervisionSummary').textContent='';supervisionEl('supervisionMore').hidden=true;
