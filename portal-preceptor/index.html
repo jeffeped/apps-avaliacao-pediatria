@@ -16,6 +16,8 @@
   <script src="vendor/pdf-lib.min.js" defer></script>
   <script src="evaluation-pdf.js" defer></script>
   <script src="evaluation-exports.js" defer></script>
+  <script src="attendance-pdf.js" defer></script>
+  <script src="attendance-exports.js" defer></script>
   <style>
     :root{
       --green:#007a4d;--green-dark:#005e3b;--green-soft:#e8f5ef;
@@ -184,6 +186,7 @@
     </section>
 
     <section id="view-frequencia" class="content view hide">
+      <div class="card"><h2>Ficha mensal de frequência</h2><p class="muted">Selecione o mês e o residente para emitir uma ficha em PDF, com a logo da UEA e seu nome e e-mail. A ficha usa a frequência salva dos seus módulos atuais. Salve os lançamentos da semana antes de emitir.</p><div class="evaluation-export-filters"><div class="field"><label for="attendancePdfMonth">Mês de referência</label><input id="attendancePdfMonth" type="month" onchange="loadAttendanceMonth()"></div><div class="field"><label for="attendancePdfResident">Residente da ficha mensal</label><select id="attendancePdfResident" onchange="attendanceMonthStatus()" disabled><option value="">Selecione o residente</option></select></div></div><div class="evaluation-export-actions"><button id="exportAttendancePdf" class="primary" onclick="exportAttendancePdf()" disabled>↓ Baixar frequência mensal em PDF</button><button id="refreshAttendanceMonth" class="evaluation-export-refresh" onclick="loadAttendanceMonth()">Atualizar mês</button></div><p id="attendancePdfStatus" class="muted evaluation-export-status" role="status" aria-live="polite">Escolha o mês e o residente.</p></div>
       <div class="card hero"><div class="hero-copy"><div class="eyebrow">Registro semanal</div><h2>Frequência dos residentes</h2><p class="muted">Toque no dia para alternar entre presente, falta, atraso e sem registro. O lançamento vale para manhã e tarde.</p></div></div>
       <div class="card"><div class="week-controls"><button class="secondary" onclick="changeAttendanceWeek(-1)">← Semana anterior</button><b id="attendanceWeekLabel">—</b><button class="secondary" onclick="changeAttendanceWeek(1)">Próxima semana →</button></div><button class="primary" onclick="markAttendanceWeek('P')">✓ Marcar todos presentes</button><div class="table-wrap" style="margin-top:14px"><table class="attendance-table"><thead id="attendanceHead"></thead><tbody id="attendanceBody"></tbody></table></div><button id="saveAttendance" class="submit" onclick="saveAttendance()">Salvar frequência da semana</button><button class="secondary" style="margin-top:10px" onclick="exportarFrequencia()">↓ Exportar frequência da semana (CSV)</button></div>
     </section>
@@ -300,7 +303,7 @@ function showView(view){
   if(view==='validacoes'&&!tasksLoaded)loadTasks();
   if(view==='avaliacao'){loadEvaluationResidents();loadEvaluationExports()}
   if(view==='apcs')renderApcs();
-  if(view==='frequencia')loadAttendance();
+  if(view==='frequencia'){loadAttendance();loadAttendanceMonth()}
   if(view==='escala')loadSchedule();
   if(view==='local')loadModuleLocations();
 }
@@ -330,7 +333,7 @@ function renderAttendance(){const ds=weekDays(attendanceWeekStart),first=new Dat
 function cycleAttendance(id,date){const k=id+'|'+date,v=attendanceRecords[k]||'';attendanceRecords[k]=v===''?'P':v==='P'?'A':v==='A'?'T':'';if(!attendanceRecords[k])delete attendanceRecords[k];renderAttendance()}
 function markAttendanceWeek(v){attendanceResidents.forEach(r=>weekDays(attendanceWeekStart).forEach(d=>attendanceRecords[r.id+'|'+d]=v));renderAttendance()}
 function changeAttendanceWeek(step){const d=new Date(attendanceWeekStart+'T12:00:00');d.setDate(d.getDate()+step*7);attendanceWeekStart=d.toISOString().slice(0,10);loadAttendance()}
-async function saveAttendance(){const registros=Object.entries(attendanceRecords).map(([k,status])=>{const [residenteId,data]=k.split('|');return{residenteId,data,status}});if(!registros.length){toast('Marque ao menos um registro.',true);return}const b=document.getElementById('saveAttendance'),t=b.textContent;b.disabled=true;b.textContent='Salvando…';try{await api('frequencia_preceptor',{acao:'salvar',registros});toast('Frequência salva.');await loadAttendance()}catch(e){toast(e.message,true)}finally{b.disabled=false;b.textContent=t}}
+async function saveAttendance(){const registros=Object.entries(attendanceRecords).map(([k,status])=>{const [residenteId,data]=k.split('|');return{residenteId,data,status}});if(!registros.length){toast('Marque ao menos um registro.',true);return}const b=document.getElementById('saveAttendance'),t=b.textContent;b.disabled=true;b.textContent='Salvando…';try{await api('frequencia_preceptor',{acao:'salvar',registros});toast('Frequência salva.');await loadAttendance();await loadAttendanceMonth()}catch(e){toast(e.message,true)}finally{b.disabled=false;b.textContent=t}}
 function csvCell(v){return '"'+String(v==null?'':v).replace(/"/g,'""')+'"'}
 function baixarCsv(nome,cabecalho,linhas){if(!linhas.length){toast('Não há dados para exportar.',true);return}const csv='\ufeff'+[cabecalho,...linhas].map(l=>l.map(csvCell).join(';')).join('\r\n'),blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=nome;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Arquivo exportado com sucesso.')}
 function exportarFrequencia(){const dias=weekDays(attendanceWeekStart),porId={};attendanceResidents.forEach(r=>porId[r.id]=r);const linhas=[];Object.entries(attendanceRecords).forEach(([chave,status])=>{const [id,data]=chave.split('|'),r=porId[id];if(r&&dias.includes(data))linhas.push([r.nome,r.ano,r.modulo,data,status==='P'?'Presente':status==='A'?'Falta':status==='T'?'Atraso':status])});linhas.sort((a,b)=>a[3].localeCompare(b[3])||a[0].localeCompare(b[0]));baixarCsv('frequencia-residentes-'+attendanceWeekStart+'.csv',['Residente','Ano','Módulo','Data','Status'],linhas)}
