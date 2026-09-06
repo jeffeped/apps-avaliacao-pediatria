@@ -1,9 +1,9 @@
 importScripts('./support-messages.js','./notifications-core.js','./push-store.js');
-const CACHE='portal-residente-v8';
-const FILES=['../shared/attendance-records.js','../shared/attendance-records.css','./','./index.html','./manifest.webmanifest','./icon.svg','./evaluation-records.js','./support-messages.js','./notifications-core.js','./notifications.css','./notifications.js','./push-store.js','./push-client.js'];
+const CACHE='portal-residente-v9';
+const FILES=['./point-security.js','../shared/attendance-records.js','../shared/attendance-records.css','./','./index.html','./manifest.webmanifest','./icon.svg','./evaluation-records.js','./support-messages.js','./notifications-core.js','./notifications.css','./notifications.js','./push-store.js','./push-client.js'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)));self.skipWaiting()});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('portal-residente-')&&key!==CACHE).map(key=>caches.delete(key)))));self.clients.claim()});
-self.addEventListener('fetch',event=>{if(event.request.method!=='GET')return;const url=new URL(event.request.url);if(url.hostname.includes('accounts.google.com')||url.hostname.includes('script.google.com'))return;event.respondWith(fetch(event.request).then(response=>{const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy));return response}).catch(()=>caches.match(event.request).then(hit=>hit||caches.match('./index.html'))))});
+self.addEventListener('fetch',event=>{if(new URL(event.request.url).origin!==self.location.origin||event.request.method!=='GET')return;const url=new URL(event.request.url);if(url.hostname.includes('accounts.google.com')||url.hostname.includes('script.google.com'))return;event.respondWith(fetch(event.request).then(response=>{const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy));return response}).catch(()=>caches.match(event.request).then(hit=>hit||caches.match('./index.html'))))});
 
 // FCM sends a data-only Web Push envelope; this worker handles both foreground
 // and background delivery, without displaying a second SDK notification.

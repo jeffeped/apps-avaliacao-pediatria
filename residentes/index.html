@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="admin-evaluations.js" defer></script><script src="admin-resident-feedback.js" defer></script><script src="../shared/attendance-records.js" defer></script><link rel="stylesheet" href="../shared/attendance-records.css">
+<script src="admin-evaluations.js" defer></script><script src="admin-resident-feedback.js" defer></script><script src="../shared/attendance-records.js" defer></script><script src="admin-security.js" defer></script><link rel="stylesheet" href="../shared/attendance-records.css">
 <meta name="theme-color" content="#006B3F">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -309,6 +309,10 @@ textarea{resize:none;height:80px}
 <link rel="stylesheet" href="admin-evaluations.css">
 </head>
 <body>
+<section style="padding:10px 16px;background:#edf5fa;border-bottom:1px solid #bdd1df;font-size:12px" aria-label="Sincronização administrativa">
+<div id="security-sync-status" role="status">Entre com a conta da coordenação para sincronizar.</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button id="security-login">Entrar</button><button id="security-review">Conferir cadastro central</button><button id="security-preserved">Baixar alterações preservadas</button><button id="security-logout">Sair</button><a href="../portal-residente/">Ponto no Portal do Residente</a></div>
+</section>
 
 <!-- SPLASH -->
 <div id="splash">
@@ -1165,7 +1169,8 @@ function pontoNow(){
   const now=new Date(), parts=new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Manaus',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).formatToParts(now).reduce((a,p)=>(a[p.type]=p.value,a),{});
   return {iso:now.toISOString(),data:`${parts.year}-${parts.month}-${parts.day}`,hora:`${parts.hour}:${parts.minute}:${parts.second}`};
 }
-function escapeHtml(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function jsArg(v){return escapeHtml(JSON.stringify(v??''));}
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function renderPontoResidentes(){
   const ano=document.getElementById('ponto-ano').value, sel=document.getElementById('ponto-residente'), anterior=sel.value;
   const lista=Object.values(APP.residentes[ano]||{});
@@ -1187,7 +1192,7 @@ function renderPonto(){
   document.getElementById('btn-checkin').disabled=!residente||!!aberto;
   document.getElementById('btn-checkout').disabled=!residente||!aberto;
   const hist=document.getElementById('ponto-historico'), pontos=getPontos().filter(p=>!id||p.residenteId===id).slice(-20).reverse();
-  hist.innerHTML=pontos.length?pontos.map(p=>`<div class="ponto-history"><span class="ponto-dot ${p.tipo==='saida'?'out':''}"></span><div class="ponto-history-main"><strong>${p.tipo==='entrada'?'Entrada':'Saída'} · ${escapeHtml(p.residenteNome)}</strong><br>${fmtPontoData(p.timestamp)} · ${escapeHtml(p.localNome||'Local não configurado')}<br><span style="color:var(--cinza-e)">${p.distancia==null?'Localização registrada':Math.round(p.distancia)+' m do local'} · precisão ${Math.round(p.precisao||0)} m</span></div><div class="ponto-history-time">${p.hora.slice(0,5)}</div></div>`).join(''):'<div class="empty"><div class="ei">📍</div><p>Nenhum ponto registrado</p></div>';
+  hist.innerHTML=pontos.length?pontos.map(p=>`<div class="ponto-history"><span class="ponto-dot ${p.tipo==='saida'?'out':''}"></span><div class="ponto-history-main"><strong>${p.tipo==='entrada'?'Entrada':'Saída'} · ${escapeHtml(p.residenteNome)}</strong><br>${fmtPontoData(p.timestamp)} · ${escapeHtml(p.localNome||'Local não configurado')}<br><span style="color:var(--cinza-e)">${p.distancia==null?'Localização registrada':Math.round(p.distancia)+' m do local'} · precisão ${Math.round(p.precisao||0)} m</span></div><div class="ponto-history-time">${escapeHtml(p.hora.slice(0,5))}</div></div>`).join(''):'<div class="empty"><div class="ei">📍</div><p>Nenhum ponto registrado</p></div>';
 }
 function distanciaMetros(a,b,c,d){const R=6371000,x=(c-a)*Math.PI/180,y=(d-b)*Math.PI/180,s=Math.sin(x/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(y/2)**2;return 2*R*Math.atan2(Math.sqrt(s),Math.sqrt(1-s));}
 function obterLocalizacao(){return new Promise((resolve,reject)=>{if(!navigator.geolocation)return reject(new Error('Geolocalização não disponível neste aparelho.'));navigator.geolocation.getCurrentPosition(resolve,()=>reject(new Error('Não foi possível obter a localização. Verifique a permissão do GPS.')),{enableHighAccuracy:true,timeout:15000,maximumAge:0});});}
@@ -1224,8 +1229,8 @@ function startOfWeek(date){const dt=new Date(date+'T12:00:00'),offset=dt.getDay(
 function currentWeekDays(){const monday=startOfWeek(currentDay||isoToday());return [0,1,2,3,4].map(n=>addDays(monday,n))}
 function changeWeek(dir){currentDay=dir===0?isoToday():addDays(startOfWeek(currentDay),dir*7);renderHome()}
 function isModuleDay(day){const p=APP.programas[homeYear]||{};return(!p.startDate||day>=p.startDate)&&(!p.endDate||day<=p.endDate)}
-function combinedAttendance(att){const m=att&&att.morning,a=att&&att.afternoon;if(!m&&!a)return{value:'',text:'○'};if(m===a)return{value:m||'',text:m==='P'?'✓':m==='A'?'✕':'⏱'};return{value:'M',text:'◐'}}
-function renderWeekAttendance(){const days=currentWeekDays(),first=new Date(days[0]+'T12:00:00'),last=new Date(days[4]+'T12:00:00'),label=document.getElementById('home-week-label');if(label)label.textContent=`${first.getDate()}/${first.getMonth()+1} a ${last.getDate()}/${last.getMonth()+1}`;const head=document.getElementById('home-week-head');if(head)head.innerHTML='<tr><th>Residente</th>'+days.map((d,i)=>`<th>${['Seg','Ter','Qua','Qui','Sex'][i]}<span class="week-day-num">${d.slice(8,10)}/${d.slice(5,7)}</span></th>`).join('')+'</tr>';const body=document.getElementById('home-week-body');if(!body)return;const ids=Object.keys(APP.residentes[homeYear]||{});if(!ids.length){body.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--cinza-e)">Nenhum residente em ${homeYear}.</td></tr>`;return}body.innerHTML=ids.map(id=>{const r=APP.residentes[homeYear][id],cells=days.map(d=>{const ok=isModuleDay(d),state=combinedAttendance((r.attendance||{})[d]||{});return`<td><button class="week-att-btn ${state.value} ${ok?'':'out'}" ${ok?`onclick="cycleWeekDay('${homeYear}','${id}','${d}')"`:'disabled'}>${state.text}</button></td>`}).join('');return`<tr><td><div class="week-resident" title="${r.name}">${r.name.split(' ')[0]}</div><button class="week-resident-action" onclick="markResidentWeek('${id}','P')">✓ semana</button></td>${cells}</tr>`}).join('')}
+function combinedAttendance(att){const m=['P','A','T'].includes(att&&att.morning)?att.morning:'',a=['P','A','T'].includes(att&&att.afternoon)?att.afternoon:'';if(!m&&!a)return{value:'',text:'○'};if(m===a)return{value:m||'',text:m==='P'?'✓':m==='A'?'✕':'⏱'};return{value:'M',text:'◐'}}
+function renderWeekAttendance(){const days=currentWeekDays(),first=new Date(days[0]+'T12:00:00'),last=new Date(days[4]+'T12:00:00'),label=document.getElementById('home-week-label');if(label)label.textContent=`${first.getDate()}/${first.getMonth()+1} a ${last.getDate()}/${last.getMonth()+1}`;const head=document.getElementById('home-week-head');if(head)head.innerHTML='<tr><th>Residente</th>'+days.map((d,i)=>`<th>${['Seg','Ter','Qua','Qui','Sex'][i]}<span class="week-day-num">${d.slice(8,10)}/${d.slice(5,7)}</span></th>`).join('')+'</tr>';const body=document.getElementById('home-week-body');if(!body)return;const ids=Object.keys(APP.residentes[homeYear]||{});if(!ids.length){body.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--cinza-e)">Nenhum residente em ${homeYear}.</td></tr>`;return}body.innerHTML=ids.map(id=>{const r=APP.residentes[homeYear][id],cells=days.map(d=>{const ok=isModuleDay(d),state=combinedAttendance((r.attendance||{})[d]||{});return`<td><button class="week-att-btn ${state.value} ${ok?'':'out'}" ${ok?`onclick="cycleWeekDay(${jsArg(homeYear)},${jsArg(id)},${jsArg(d)})"`:'disabled'}>${state.text}</button></td>`}).join('');return`<tr><td><div class="week-resident" title="${escapeHtml(r.name)}">${escapeHtml(r.name.split(' ')[0])}</div><button class="week-resident-action" onclick="markResidentWeek(${jsArg(id)},'P')">✓ semana</button></td>${cells}</tr>`}).join('')}
 function cycleWeekDay(year,id,day){const r=APP.residentes[year]&&APP.residentes[year][id];if(!r)return;if(!r.attendance)r.attendance={};const state=combinedAttendance(r.attendance[day]||{}).value,next=state===''?'P':state==='P'?'A':state==='A'?'T':null;r.attendance[day]={morning:next,afternoon:next};saveApp();renderWeekAttendance();renderHomeSummary()}
 function markResidentWeek(id,val){const r=APP.residentes[homeYear]&&APP.residentes[homeYear][id];if(!r)return;if(!r.attendance)r.attendance={};currentWeekDays().filter(isModuleDay).forEach(d=>{r.attendance[d]={morning:val,afternoon:val}});saveApp();renderWeekAttendance();renderHomeSummary()}
 function markAllWeek(val){Object.keys(APP.residentes[homeYear]||{}).forEach(id=>{const r=APP.residentes[homeYear][id];if(!r.attendance)r.attendance={};currentWeekDays().filter(isModuleDay).forEach(d=>{r.attendance[d]={morning:val,afternoon:val}})});saveApp();renderWeekAttendance();renderHomeSummary();showToast(val==='P'?'✓ Semana marcada como presente':'Semana limpa','s')}
@@ -1273,14 +1278,14 @@ function renderHomeAttTable() {
   body.innerHTML=ids.map(id=>{
     const r=APP.residentes[homeYear][id];
     const att=(r.attendance&&r.attendance[currentDay])||{};
-    const mV=att.morning, aV=att.afternoon;
+    const mV=['P','A','T'].includes(att.morning)?att.morning:'', aV=['P','A','T'].includes(att.afternoon)?att.afternoon:'';
     const mT=mV==='P'?'✓':mV==='A'?'✕':mV==='T'?'⏱':'○';
     const aT=aV==='P'?'✓':aV==='A'?'✕':aV==='T'?'⏱':'○';
     const firstName=r.name.split(' ')[0];
     return `<tr>
-      <td title="${r.name}"><span style="font-size:12px">${firstName}</span></td>
-      <td><button id="ab-m-${id}" class="att-btn ${mV||''}" onclick="cycleAtt('${homeYear}','${id}','morning')">${mT}</button></td>
-      <td><button id="ab-a-${id}" class="att-btn ${aV||''}" onclick="cycleAtt('${homeYear}','${id}','afternoon')">${aT}</button></td>
+      <td title="${escapeHtml(r.name)}"><span style="font-size:12px">${escapeHtml(firstName)}</span></td>
+      <td><button id="ab-m-${escapeHtml(id)}" class="att-btn ${mV||''}" onclick="cycleAtt(${jsArg(homeYear)},${jsArg(id)},'morning')">${mT}</button></td>
+      <td><button id="ab-a-${escapeHtml(id)}" class="att-btn ${aV||''}" onclick="cycleAtt(${jsArg(homeYear)},${jsArg(id)},'afternoon')">${aT}</button></td>
     </tr>`;
   }).join('');
 }
@@ -1396,18 +1401,18 @@ function renderTurmaList() {
     const cls=pct===null?'':pct>=75?'ok':pct>=60?'medio':'baixo';
     const statCls=pct===null?'':pct>=75?'verde':pct>=60?'amarelo':'vermelho';
     return `<div class="res-card ${cls}">
-      <div class="res-avatar ${turmaYear}">${initials}</div>
+      <div class="res-avatar ${turmaYear}">${escapeHtml(initials)}</div>
       <div style="flex:1;min-width:0">
-        <div class="res-name">${i+1}. ${r.name}</div>
-        <div style="font-size:10px;color:var(--cinza-e);overflow:hidden;text-overflow:ellipsis">${r.email||'E-mail não cadastrado'}</div>
+        <div class="res-name">${i+1}. ${escapeHtml(r.name)}</div>
+        <div style="font-size:10px;color:var(--cinza-e);overflow:hidden;text-overflow:ellipsis">${escapeHtml(r.email||'E-mail não cadastrado')}</div>
         <div class="mini-stats">
           <span class="mini-stat ${statCls}">${pct!==null?pct+'% freq':'sem reg.'}</span>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-        <button onclick="preencherAvaliacao('${id}','${turmaYear}')" style="background:var(--verde);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-family:var(--font);font-weight:700;cursor:pointer;white-space:nowrap">📋 Avaliar</button>
-        <button onclick="cadastrarEmailResidente('${turmaYear}','${id}')" style="background:var(--cinza-f);color:var(--azul);border:1px solid var(--cinza-m);border-radius:6px;padding:5px 10px;font-size:10px;font-family:var(--font);font-weight:700;cursor:pointer;white-space:nowrap">✉️ ${r.email?'Alterar':'Cadastrar'} e-mail</button>
-        <button onclick="removerResidente('${turmaYear}','${id}')" style="background:none;border:none;font-size:14px;cursor:pointer;color:var(--cinza-e);padding:2px">🗑️</button>
+        <button onclick="preencherAvaliacao(${jsArg(id)},${jsArg(turmaYear)})" style="background:var(--verde);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-family:var(--font);font-weight:700;cursor:pointer;white-space:nowrap">📋 Avaliar</button>
+        <button onclick="cadastrarEmailResidente(${jsArg(turmaYear)},${jsArg(id)})" style="background:var(--cinza-f);color:var(--azul);border:1px solid var(--cinza-m);border-radius:6px;padding:5px 10px;font-size:10px;font-family:var(--font);font-weight:700;cursor:pointer;white-space:nowrap">✉️ ${r.email?'Alterar':'Cadastrar'} e-mail</button>
+        <button onclick="removerResidente(${jsArg(turmaYear)},${jsArg(id)})" style="background:none;border:none;font-size:14px;cursor:pointer;color:var(--cinza-e);padding:2px">🗑️</button>
       </div>
     </div>`;
   }).join('');
@@ -1603,7 +1608,7 @@ function updateResidentesList() {
   const existing=loadArr('avaliacoes').map(a=>a.residente);
   const all=[...new Set([...names,...existing])];
   document.querySelectorAll('#residentes-list').forEach(dl=>{
-    dl.innerHTML=all.map(n=>`<option value="${n}">`).join('');
+    dl.innerHTML=all.map(n=>`<option value="${escapeHtml(n)}">`).join('');
   });
 }
 
@@ -1628,20 +1633,20 @@ function renderHistorico() {
     const cls=nota>=7?'ok':nota>=5?'medio':'baixo';
     const notaCls=nota>=7?'verde':nota>=5?'amarelo':'vermelho';
     return `<div class="hist-item ${cls}">
-      <div class="hist-meta">${a.data} · ${a.ano} · ${a.periodo}${a.setor?' · '+a.setor:''}</div>
+      <div class="hist-meta">${escapeHtml(a.data)} · ${escapeHtml(a.ano)} · ${escapeHtml(a.periodo)}${escapeHtml(a.setor?' · '+a.setor:'')}</div>
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div>
-          <div class="hist-nome">${a.residente}</div>
+          <div class="hist-nome">${escapeHtml(a.residente)}</div>
           <div class="hist-chips">
-            <span class="hist-chip">📘 C: ${a.dominios.conhecimentos}</span>
-            <span class="hist-chip">🔬 H: ${a.dominios.habilidades}</span>
-            <span class="hist-chip">🤝 A: ${a.dominios.atitudes}</span>
+            <span class="hist-chip">📘 C: ${escapeHtml(a.dominios.conhecimentos)}</span>
+            <span class="hist-chip">🔬 H: ${escapeHtml(a.dominios.habilidades)}</span>
+            <span class="hist-chip">🤝 A: ${escapeHtml(a.dominios.atitudes)}</span>
           </div>
-          ${a.obs?`<div style="font-size:11px;color:var(--cinza-e);margin-top:6px;line-height:1.4">${a.obs}</div>`:''}
+          ${a.obs?`<div style="font-size:11px;color:var(--cinza-e);margin-top:6px;line-height:1.4">${escapeHtml(a.obs)}</div>`:''}
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
           <div class="hist-nota ${notaCls}">${nota.toFixed(1)}</div>
-          <button onclick="deletarAvaliacao(${a.id})" style="background:none;border:none;cursor:pointer;color:var(--cinza-e);font-size:16px">🗑️</button>
+          <button onclick="deletarAvaliacao(${jsArg(a.id)})" style="background:none;border:none;cursor:pointer;color:var(--cinza-e);font-size:16px">🗑️</button>
         </div>
       </div>
     </div>`;
@@ -1819,7 +1824,7 @@ function renderDashboard() {
     const cls=pct===null?'':pct>=75?'verde':pct>=60?'amarelo':'vermelho';
     freqHtml+=`<div class="pb-wrap">
       <div class="pb-label">
-        <span><strong>${yr}</strong> — ${prog.moduloName||'sem módulo'} (${ids.length} res.)</span>
+        <span><strong>${yr}</strong> — ${escapeHtml(prog.moduloName||'sem módulo')} (${ids.length} res.)</span>
         <span style="color:var(--${cls||'cinza-e'})">${pct!==null?pct+'%':'sem reg.'}</span>
       </div>
       <div class="pb-bg"><div class="pb ${cls}" style="width:${pct||0}%"></div></div>
@@ -1834,7 +1839,7 @@ function renderDashboard() {
     const pos=i===0?'p1':i===1?'p2':i===2?'p3':'';
     return `<div class="rank-item">
       <div class="rank-pos ${pos}">${i+1}</div>
-      <div style="flex:1"><div style="font-size:13px;font-weight:700">${m.nome}</div><div style="font-size:11px;color:var(--cinza-e)">${m.count} avaliação${m.count>1?'ões':''}</div></div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:700">${escapeHtml(m.nome)}</div><div style="font-size:11px;color:var(--cinza-e)">${m.count} avaliação${m.count>1?'ões':''}</div></div>
       <div style="font-size:18px;font-weight:800;color:var(--${cls})">${m.media.toFixed(1)}</div>
     </div>`;
   }).join(''):'<div style="text-align:center;color:var(--cinza-e);padding:12px;font-size:12px">Nenhum dado disponível</div>';
@@ -1864,7 +1869,7 @@ function renderDashboard() {
     :alertas.map(m=>{
         const tipo=m.media<5?'critico':'aviso';
         const icon=m.media<5?'🔴':'🟡';
-        return `<div class="alert ${tipo==='critico'?'aviso':'info'}"><span>${icon}</span><span><strong>${m.nome}</strong> – Média ${m.media.toFixed(1)} (${m.media<5?'Insatisfatório':'Regular'})</span></div>`;
+        return `<div class="alert ${tipo==='critico'?'aviso':'info'}"><span>${icon}</span><span><strong>${escapeHtml(m.nome)}</strong> – Média ${m.media.toFixed(1)} (${m.media<5?'Insatisfatório':'Regular'})</span></div>`;
       }).join('');
 }
 
@@ -1934,7 +1939,7 @@ function renderPreceptoresList() {
   container.innerHTML=['R1','R2','R3'].map(ano=>{
     const grupo=lista.filter(p=>p.ano===ano);
     const itens=grupo.length?grupo.map((p,i)=>`<div class="res-card" style="margin:8px 0;padding:12px">
-      <div class="res-avatar ${ano}">${p.nome.split(' ').filter(Boolean).map(x=>x[0]).join('').slice(0,2).toUpperCase()}</div>
+      <div class="res-avatar ${ano}">${escapeHtml(p.nome.split(' ').filter(Boolean).map(x=>x[0]).join('').slice(0,2).toUpperCase())}</div>
       <div style="flex:1;min-width:0"><div class="res-name">${i+1}. ${escapeHtml(p.nome)}</div><div style="font-size:10px;color:var(--cinza-e);overflow:hidden;text-overflow:ellipsis">${escapeHtml(p.email)}</div><div class="mini-stats"><span class="mini-stat ${cores[ano]}">${escapeHtml(p.modulo)}</span></div></div>
       <button onclick="removerPreceptor(${p.index})" style="background:none;border:none;font-size:14px;cursor:pointer;color:var(--cinza-e);padding:2px">🗑️</button>
     </div>`).join(''):`<div class="gps-note" style="padding:8px 0">Nenhum preceptor cadastrado em ${ano}.</div>`;
