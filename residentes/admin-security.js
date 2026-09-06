@@ -1,7 +1,7 @@
 (function(){
   'use strict';
   const revisionKey='residped_cadastros_revisao_v1',legacyKey='residped_fila_legada_v1';
-  let revision=localStorage.getItem(revisionKey)||'',running=null,loginForSync=false,lastError='',review=null;
+  let revision=localStorage.getItem(revisionKey)||'',running=null,loginAction='',lastError='',review=null,reviewLoading=false,progress=null;
   const clone=v=>JSON.parse(JSON.stringify(v)),isCadastro=t=>['residentes','preceptores','cadastros_admin'].includes(t);
   const token=()=>typeof AUTOAVAL_ADMIN_TOKEN==='string'?AUTOAVAL_ADMIN_TOKEN:'';
   function setRevision(value){revision=value||'';if(revision)localStorage.setItem(revisionKey,revision);else localStorage.removeItem(revisionKey);}
@@ -21,9 +21,13 @@
   }
   function status(message){
     if(message!==undefined)lastError=message;
-    const button=document.getElementById('btn-sync'),text=document.getElementById('security-sync-status');
-    if(button){button.textContent=!token()?'Entrar para sincronizar':running?'Sincronizando…':queue().length?queue().length+' pendente(s)':'Sincronizar';button.onclick=sync;}
-    if(text)text.textContent=lastError||(!token()?'Entre com a conta da coordenação para sincronizar.':!revision?'Confira o cadastro central antes da primeira alteração neste aparelho.':queue().length?'Há alterações locais aguardando sincronização.':'Sincronização protegida por login e controle de versão.');
+    const button=document.getElementById('btn-sync'),text=document.getElementById('security-sync-status'),signedIn=!!token(),busy=!!running||reviewLoading;
+    if(button){button.textContent=!signedIn?'Entrar para sincronizar':running?'Enviando…':reviewLoading?'Consultando…':queue().length?queue().length+' pendente(s)':'Sincronizar';button.disabled=busy;button.onclick=sync;}
+    if(text)text.textContent=running?(progress?'Enviando alteração '+Math.min(progress.done+1,progress.total)+' de '+progress.total+'. Aguarde a confirmação.':'Enviando alterações. Aguarde a confirmação.'):reviewLoading?'Consultando o cadastro central. Nenhuma alteração será publicada.':lastError||(!signedIn?'Entre com a conta da coordenação.':!revision?'Confira o cadastro central antes de publicar alterações deste aparelho.':queue().length?queue().length+' alteração(ões) neste aparelho aguardam envio.':'Cadastro conferido. Nenhum envio pendente.');
+    const login=document.getElementById('security-login'),logout=document.getElementById('security-logout'),check=document.getElementById('security-review');
+    if(login){login.hidden=signedIn;login.disabled=busy;}
+    if(logout)logout.hidden=!signedIn;
+    if(check)check.disabled=busy;
   }
   async function api(tipo,dados,rev){
     const credential=token();if(!credential){const e=new Error('Entre com a conta da coordenação.');e.codigo='ACESSO_NEGADO';throw e;}
@@ -45,10 +49,11 @@
   }
   async function flush(){
     if(running)return running;if(!token())return false;
+    progress={done:0,total:queue().length};
     running=(async()=>{
       let complete=true;
       while(queue().length){
-        const first=queue()[0];
+        const first=queue()[0];progress.total=Math.max(progress.total,progress.done+queue().length);status();
         try{
           if(first.tipo==='cadastros_admin'){
             if(!first.revisao){const e=new Error('Confira os cadastros antes de publicar as alterações locais.');e.codigo='CONFLITO_REVISAO';throw e;}
@@ -61,7 +66,7 @@
             await api(first.tipo,first.dados);
             saveQueue(queue().filter(x=>x.queueId!==first.queueId));
           }
-          lastError='';
+          progress.done++;lastError='';status();
         }catch(error){
           complete=false;
           if(error.codigo==='ACESSO_NEGADO'){AUTOAVAL_ADMIN_TOKEN='';}
@@ -72,10 +77,10 @@
       }
       return complete;
     })();
-    status();try{return await running;}finally{running=null;status();}
+    status();try{return await running;}finally{running=null;progress=null;status();}
   }
   async function sync(){
-    if(!token()){loginForSync=true;abrirLoginAutoavaliacoes();status();return false;}
+    if(!token()){loginAction='sync';abrirLoginAutoavaliacoes();status();return false;}
     if(!revision){await reviewCadastros();return false;}
     if(!queue().length){
       enqueue('residentes',APP);
@@ -100,8 +105,10 @@
   function closeReview(){if(review){review.remove();review=null;}}
   function addText(parent,tag,text){const el=document.createElement(tag);el.textContent=text;parent.appendChild(el);return el;}
   async function reviewCadastros(){
-    if(!token()){loginForSync=true;abrirLoginAutoavaliacoes();return;}
+    if(!token()){loginAction='review';abrirLoginAutoavaliacoes();return;}
     if(running){status('Aguarde o envio em andamento antes de conferir o cadastro.');return;}
+    if(reviewLoading)return;
+    reviewLoading=true;status();
     try{
       const central=await api('cadastros_admin',{acao:'consultar'});
       if(!central.app||typeof central.revisao!=='string')throw new Error('O serviço precisa ser atualizado para a sincronização protegida.');
@@ -131,25 +138,28 @@
       };
       document.body.appendChild(review);
     }catch(e){status(e.message);showToast(e.message,'e');}
+    finally{reviewLoading=false;status();}
   }
   function exportPreserved(){
     let preserved=[];try{preserved=JSON.parse(localStorage.getItem(legacyKey)||'[]');}catch{}
     const blob=new Blob([JSON.stringify({salvoEm:new Date().toISOString(),cadastroLocal:APP,filaAtual:queue(),preservados:preserved},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='residped-alteracoes-preservadas.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
   function logoutSync(){
-    AUTOAVAL_ADMIN_TOKEN='';AUTOAVAL_ADMIN_DATA=[];loginForSync=false;closeReview();
+    AUTOAVAL_ADMIN_TOKEN='';AUTOAVAL_ADMIN_DATA=[];loginAction='';closeReview();
     if(typeof signOutSupervision==='function')signOutSupervision();
     if(window.google&&google.accounts)google.accounts.id.disableAutoSelect();
     status('Sessão encerrada. As alterações locais permanecem preservadas.');
   }
   const originalLogin=receberLoginAutoavaliacoes;
-  window.receberLoginAutoavaliacoes=async response=>{await originalLogin(response);status();if(loginForSync){loginForSync=false;await sync();}};
+  window.receberLoginAutoavaliacoes=async response=>{const action=loginAction;loginAction='';await originalLogin(response);lastError='';status();if(!token())return;if(action==='review')await reviewCadastros();else if(action==='sync')await sync();};
+  const originalSignOut=signOutSupervision;
+  window.signOutSupervision=()=>{originalSignOut();loginAction='';closeReview();status('Sessão encerrada. As alterações locais permanecem preservadas.');};
   window.getPendentes=queue;window.setPendentes=saveQueue;window.addPendente=enqueue;
   window.atualizarStatusSync=status;window.processarFila=flush;window.syncData=sync;
   window.enviarParaSheets=async(tipo,dados)=>{const id=enqueue(tipo,dados);if(!id)return false;await flush();return !queue().some(x=>x.queueId===id);};
   window.sincronizarAuto=window.enviarParaSheets;
   window.registrarPonto=async()=>showToast('Registre o ponto no Portal do Residente, com sua conta Google.','e');
   window.ResidPedSecurity={review:reviewCadastros,sync,logout:logoutSync,exportPreserved,status,flatten};
-  function init(){migrateQueue();[['security-review',reviewCadastros],['security-login',()=>{loginForSync=true;abrirLoginAutoavaliacoes();}],['security-logout',logoutSync],['security-preserved',exportPreserved]].forEach(([id,fn])=>{const b=document.getElementById(id);if(b)b.onclick=fn;});status();}
+  function init(){migrateQueue();[['security-review',reviewCadastros],['security-login',()=>{loginAction='review';abrirLoginAutoavaliacoes();}],['security-logout',logoutSync],['security-preserved',exportPreserved]].forEach(([id,fn])=>{const b=document.getElementById(id);if(b)b.onclick=fn;});status();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();

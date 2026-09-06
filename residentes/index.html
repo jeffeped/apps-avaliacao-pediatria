@@ -299,9 +299,21 @@ textarea{resize:none;height:80px}
 /* INSTALL/UPDATE BANNERS */
 #install-banner{position:fixed;bottom:0;left:0;right:0;z-index:8500;background:#fff;border-top:1px solid var(--cinza-m);padding:14px 16px;display:none;align-items:center;gap:12px;max-width:480px;margin:0 auto;box-shadow:0 -4px 20px rgba(0,0,0,.1)}
 #update-banner{position:fixed;top:0;left:0;right:0;z-index:8500;background:var(--azul);padding:12px 16px;display:none;align-items:center;gap:10px;max-width:480px;margin:0 auto}
+.security-sync{padding:12px 16px;background:#edf5fa;border-bottom:1px solid #c9dbe5;color:var(--texto);font-size:11px;line-height:1.5}
+.security-sync [hidden]{display:none!important}
+.security-sync-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--azul);margin-bottom:3px}
+.security-controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px}
+.security-sync button{appearance:none;font:600 11px var(--font);min-height:36px;padding:8px 11px;border:1px solid #b9cedb;border-radius:8px;background:#fff;color:var(--azul);cursor:pointer}
+.security-sync button:disabled{opacity:.65;cursor:wait}
+.security-sync button:focus-visible,.security-sync summary:focus-visible{outline:2px solid var(--azul-c);outline-offset:2px}
+.security-sync #security-review{background:var(--azul);color:#fff;border-color:var(--azul)}
+.security-sync details{margin-top:8px;color:var(--cinza-e)}
+.security-sync summary{cursor:pointer;font-size:10px}
+.security-tools{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:8px}
+.security-tools a{font-size:11px;color:var(--azul);text-underline-offset:3px}
 
 @media print{
-  #app-header,#install-banner,#update-banner,.btn,.modal-ov,#splash{display:none!important}
+  #app-header,#install-banner,#update-banner,.btn,.modal-ov,#splash,.security-sync{display:none!important}
   .screen{display:none!important}
   body{max-width:100%}
 }
@@ -309,9 +321,11 @@ textarea{resize:none;height:80px}
 <link rel="stylesheet" href="admin-evaluations.css">
 </head>
 <body>
-<section style="padding:10px 16px;background:#edf5fa;border-bottom:1px solid #bdd1df;font-size:12px" aria-label="Sincronização administrativa">
+<section class="security-sync" aria-label="Sincronização administrativa">
+<div class="security-sync-title">Cadastro e sincronização</div>
 <div id="security-sync-status" role="status">Entre com a conta da coordenação para sincronizar.</div>
-<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button id="security-login">Entrar</button><button id="security-review">Conferir cadastro central</button><button id="security-preserved">Baixar alterações preservadas</button><button id="security-logout">Sair</button><a href="../portal-residente/">Ponto no Portal do Residente</a></div>
+<div class="security-controls"><button id="security-login">Entrar</button><button id="security-review">Conferir cadastro central</button><button id="security-logout" hidden>Sair</button></div>
+<details><summary>Alterações preservadas e ponto</summary><div class="security-tools"><button id="security-preserved">Baixar alterações preservadas</button><a href="../portal-residente/">Ponto no Portal do Residente</a></div></details>
 </section>
 
 <!-- SPLASH -->
@@ -2138,7 +2152,7 @@ if('serviceWorker' in navigator){
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;document.getElementById('install-banner').style.display='flex';});
 window.addEventListener('appinstalled',()=>{deferredPrompt=null;document.getElementById('install-banner').style.display='none';showToast('✓ App instalado!','s');});
 async function installApp(){if(!deferredPrompt)return;deferredPrompt.prompt();const{outcome}=await deferredPrompt.userChoice;if(outcome==='accepted')showToast('✓ Instalando...','s');deferredPrompt=null;document.getElementById('install-banner').style.display='none';}
-function applyUpdate(){navigator.serviceWorker.getRegistration().then(reg=>{if(reg&&reg.waiting){reg.waiting.postMessage({type:'SKIP_WAITING'});window.location.reload();}});}
+async function applyUpdate(){try{const reg=await navigator.serviceWorker.getRegistration();if(reg&&reg.waiting)reg.waiting.postMessage({type:'SKIP_WAITING'});}finally{window.location.reload();}}
 
 // ============================================================
 // INIT

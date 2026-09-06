@@ -1,4 +1,4 @@
-const CACHE='residped-uea-v11';
+const CACHE='residped-uea-v12';
 const FILES=['./admin-security.js','../shared/attendance-records.js','../shared/attendance-records.css','./','./index.html','./manifest.webmanifest','./icon.svg','./admin-evaluations.js','./admin-resident-feedback.js','./admin-evaluations.css'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)));self.skipWaiting()});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('residped-uea-')&&key!==CACHE).map(key=>caches.delete(key)))));self.clients.claim()});
