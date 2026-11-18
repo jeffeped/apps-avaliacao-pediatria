@@ -24,6 +24,8 @@
         <label>Residente para lançamento<select data-resident><option value="">Selecione o residente</option></select></label>
         <label>Mês do lançamento<input data-month type="month"></label></div>
       <div data-month-controls hidden>
+        <div class="frequency-actions"><button data-pdf>Baixar PDF da frequência salva</button></div>
+        <p>O PDF usa os registros já salvos deste residente no mês. Alterações ainda em revisão precisam ser salvas antes do download. O campo de assinatura fica vazio para assinatura posterior.</p>
         <div class="frequency-filters"><label>De<input data-start type="date"></label><label>Até<input data-end type="date"></label>
         <label>Dias a selecionar<select data-days><option value="weekdays">Segunda a sexta</option><option value="all">Todos os dias, incluindo fins de semana</option></select></label>
         <button data-select>Selecionar período</button><button data-unselect>Desmarcar dias</button></div>
@@ -40,6 +42,7 @@
       </div></div><p data-status role="status" aria-live="polite"></p></section>`;
     const el=name=>root.querySelector('[data-'+name+']');
     let central=null,revision='',roster=[],draft={},baseline={},selected=new Set(),pending=null,request=0,busy=false;
+    const pdfUrls=new Set();
     const credential=()=>AUTOAVAL_ADMIN_TOKEN;
     const resident=()=>roster.find(r=>r.key===el('resident').value);
     const esc=value=>escapeHtml(value);
@@ -47,6 +50,7 @@
     function invalidate(){pending=null;el('preview').hidden=true;el('confirm').checked=false;el('save').disabled=true;}
     function setBusy(value){busy=value;root.querySelectorAll('button,select,input').forEach(e=>e.disabled=value||!!((e.dataset.day||e.dataset.date)&&(e.dataset.day||e.dataset.date)>today()));if(!value)el('save').disabled=!pending||!el('confirm').checked;}
     function reset(){
+      for(const url of pdfUrls)URL.revokeObjectURL(url);pdfUrls.clear();
       request++;central=null;revision='';roster=[];draft={};baseline={};selected.clear();invalidate();
       el('calendar').innerHTML='';el('count').textContent='';el('selection').textContent='';el('status').textContent='';
       el('resident').innerHTML='<option value="">Selecione o residente</option>';el('month-controls').hidden=true;
@@ -146,6 +150,32 @@
         el('status').textContent=(sent?'O envio precisa ser conferido no cadastro central antes de nova tentativa. ':'')+e.message;
       }finally{setBusy(false);}
     }
+    async function downloadPdf(){
+      const r=resident(),month=el('month').value;
+      if(busy||!r||!credential()||!validMonth(month))return;
+      if(changes().length){el('status').textContent='Salve os lançamentos ou carregue novamente o cadastro antes de baixar o PDF da frequência salva.';return;}
+      const token=credential(),version=request;setBusy(true);el('status').textContent='Consultando os registros salvos para emitir o PDF…';
+      try{
+        const current=await supervisionApi({acao:'consultar'},'cadastros_admin');
+        if(version!==request||token!==credential())return;
+        if(!current.app?.residentes||!current.revisao)throw new Error('O serviço não retornou o cadastro central atualizado.');
+        const data=AdminAttendancePDF.prepare(current.app,r,month,today(),AdminAttendancePDF.identity(token));
+        const response=await fetch('../portal-preceptor/assets/uea-logo-verde.pdf');
+        if(!response.ok)throw new Error('Não foi possível carregar a logo da UEA. Tente novamente.');
+        const bytes=await AttendancePDF.create(data,r.id,new Uint8Array(await response.arrayBuffer()),{supervision:true});
+        if(version!==request||token!==credential())return;
+        const url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));pdfUrls.add(url);
+        const link=document.createElement('a');link.href=url;
+        link.download=('frequencia-supervisao-'+r.name+'-'+month+'.pdf').replace(/[\\/:*?"<>|]/g,'-');
+        document.body.appendChild(link);link.click();link.remove();
+        setTimeout(()=>{URL.revokeObjectURL(url);pdfUrls.delete(url);},60000);
+        central=clone(current.app);revision=current.revisao;openMonth();
+        el('status').textContent='PDF gerado com a frequência salva de '+r.name+', '+month+'. Campo de assinatura vazio para assinatura posterior. Nenhum registro foi alterado.';
+      }catch(e){if(version!==request||token!==credential())return;if(e.accessDenied)signOutSupervision();el('status').textContent='Não foi possível emitir o PDF. '+e.message;}
+      finally{setBusy(false);}
+    }
+    el('pdf').onclick=downloadPdf;
+    window.addEventListener('beforeunload',()=>{for(const url of pdfUrls)URL.revokeObjectURL(url);pdfUrls.clear();});
     el('login').onclick=()=>abrirLoginAutoavaliacoes();el('refresh').onclick=load;
     el('resident').onchange=el('month').onchange=openMonth;
     for(const name of ['start','end','days','value','shifts'])el(name).onchange=invalidate;

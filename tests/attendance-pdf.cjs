@@ -29,6 +29,7 @@ const server=http.createServer((req,res)=>{
   await assert.rejects(AttendancePDF.create({...fixture('2026-09'),preceptor:{}},'r1',logo),/identificar o preceptor/);
   await assert.rejects(AttendancePDF.create({...fixture('2026-08'),residentes:[{...resident,nome:'Nome extenso '.repeat(30)}]},'r1',logo),/extensa/);
   new vm.Script([...fs.readFileSync(path.join(root,'portal-preceptor/index.html'),'utf8').matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).join('\n'));
+  if(process.env.ATTENDANCE_PDF_UNIT_ONLY==='1'){console.log('OK: gerador do preceptor; 28, 29, 30 e 31 dias; assinatura vazia; conflitos e validações.');return;}
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const browser=await chromium.launch({headless:true,...(process.env.BROWSER_EXECUTABLE?{executablePath:process.env.BROWSER_EXECUTABLE}:{})});
   try{

@@ -38,8 +38,8 @@
   async function create(data,residenteId,logoBytes,options={}){
     const sheet=prepare(data,residenteId),{info,resident,rows,totals}=sheet;
     if(!sheet.records&&!options.template)throw new Error('Não há frequência salva para este residente no mês selecionado.');
-    const preceptor=data.preceptor||{};
-    if(!options.template&&(!String(preceptor.nome||'').trim()||!String(preceptor.email||'').trim()))throw new Error('Entre novamente para identificar o preceptor que emite a ficha.');
+    const supervision=options.supervision===true,preceptor=(supervision?data.supervisor:data.preceptor)||{};
+    if(!options.template&&(!String(preceptor.nome||'').trim()||!String(preceptor.email||'').trim()))throw new Error(supervision?'Entre novamente para identificar o supervisor que emite a ficha.':'Entre novamente para identificar o preceptor que emite a ficha.');
     if(!/^\d{4}-\d{2}-\d{2}$/.test(data.emitidoEm||''))throw new Error('Data de emissão indisponível. Atualize a consulta.');
     const {PDFDocument,PDFName,PDFNumber,PDFHexString,StandardFonts,rgb}=root.PDFLib;
     const doc=await PDFDocument.create(),form=doc.getForm();form.acroForm.dict.set(PDFName.of('SigFlags'),PDFNumber.of(1));
@@ -64,11 +64,11 @@
     const rule=top=>page.drawLine({start:{x:margin,y:height-top},end:{x:width-margin,y:height-top},thickness:.6,color:line});
     page.drawPage(logo,{x:margin-5,y:height-94,width:135,height:135*logo.height/logo.width});
     text('RESIDÊNCIA MÉDICA EM PEDIATRIA',208,45,9,bold,green);
-    text('Ficha de frequência',208,58,21,bold,green);
-    text('Portal do Preceptor · ResidPed UEA',208,84,9,regular,muted);rule(105);
+    text(supervision?'Frequência administrativa':'Ficha de frequência',208,58,21,bold,green);
+    text(supervision?'Supervisão do Programa · ResidPed UEA':'Portal do Preceptor · ResidPed UEA',208,84,9,regular,muted);rule(105);
     let y=120;text('IDENTIFICAÇÃO DO RESIDENTE',margin,y,8,bold,green);y+=17;
     const names=wrap(resident.nome,content,16,bold);lines(names,margin,y,16,bold,ink,20);y+=names.length*20+9;
-    const fields=[['Ano da residência',resident.ano],['Mês de referência',info.label],['Módulo / setor',resident.modulo],['Período da ficha','01/'+String(info.month).padStart(2,'0')+'/'+info.year+' a '+info.days+'/'+String(info.month).padStart(2,'0')+'/'+info.year]];
+    const fields=[['Ano da residência',resident.ano],['Mês de referência',info.label],['Módulo / setor',resident.modulo],[supervision?'Período consultado':'Período da ficha','01/'+String(info.month).padStart(2,'0')+'/'+info.year+' a '+(supervision?root.EvaluationPDF.date(data.consultadoAte):info.days+'/'+String(info.month).padStart(2,'0')+'/'+info.year)]];
     for(let i=0;i<fields.length;i+=2){let rowHeight=0;fields.slice(i,i+2).forEach(([label,value],column)=>{const x=margin+column*(content+20)/2;const values=wrap(value||'Não informado',(content-20)/2);text(label.toUpperCase(),x,y,7.5,bold,muted);lines(values,x,y+13);rowHeight=Math.max(rowHeight,values.length*14+19);});y+=rowHeight;}y+=6;
     const rowHeight=Math.min(14,(height-65-y-22-152)/rows.length);
     if(rowHeight<11.5)throw new Error('A identificação é extensa demais para a ficha mensal em uma página. Revise os campos do cadastro.');
@@ -82,25 +82,25 @@
       y+=rowHeight;rule(y);
     });
     y+=5;text('P = Presente · A = Falta · T = Atraso · - = Sem registro',margin,y,7.5,regular,muted);y+=10;
-    text('Lançamentos de dia completo preenchem manhã e tarde.',margin,y,7.5,regular,muted);y+=14;
+    text(supervision?'Cadastro central consultado até '+root.EvaluationPDF.date(data.consultadoAte)+'. Sem registro não significa falta.':'Lançamentos de dia completo preenchem manhã e tarde.',margin,y,7.5,regular,muted);y+=14;
     rect(margin,y,content,32,pale);text('RESUMO DO MÊS',margin+10,y+5,8,bold,green);
     const count=(n,one,many)=>n+' '+(n===1?one:many);
     text('Dias com registro: '+totals.dias+'   |   Turnos: '+count(totals.P,'presença','presenças')+' · '+count(totals.A,'falta','faltas')+' · '+count(totals.T,'atraso','atrasos'),margin+10,y+18,9,bold,green);y+=42;
     text(root.EvaluationPDF.placeDate(data.emitidoEm),margin,y,10);y+=22;
     const fieldX=margin+296,fieldWidth=content-296;
-    text('PRECEPTOR RESPONSÁVEL',margin,y,9,bold,green);text('ASSINATURA DIGITAL',fieldX,y,9,bold,green);
+    text(supervision?'SUPERVISOR RESPONSÁVEL':'PRECEPTOR RESPONSÁVEL',margin,y,9,bold,green);text('ASSINATURA DIGITAL',fieldX,y,9,bold,green);
     let nameLines,emailLines,size=10;
     for(;size>=7;size-=.5){nameLines=wrap(preceptor.nome||'Nome do preceptor',276,size,bold);emailLines=wrap(preceptor.email||'E-mail do preceptor',276,size-1);if((nameLines.length+emailLines.length)*(size+1)+2<=40)break;}
     if(size<7)throw new Error('O nome ou e-mail do preceptor é extenso demais para o campo de identificação.');
     lines(nameLines,margin,y+17,size,bold,ink,size+1);lines(emailLines,margin,y+19+nameLines.length*(size+1),size-1,regular,muted,size+1);
     const fieldHeight=40,fieldY=height-y-17-fieldHeight;
     const appearance=doc.context.register(doc.context.flateStream('q 0.79 0.85 0.81 RG 0.6 w 0.3 0.3 '+(fieldWidth-.6)+' '+(fieldHeight-.6)+' re S Q',{Type:'XObject',Subtype:'Form',BBox:[0,0,fieldWidth,fieldHeight],Resources:{}}));
-    const field=doc.context.register(doc.context.obj({Type:'Annot',Subtype:'Widget',FT:'Sig',T:PDFHexString.fromText('assinatura_preceptor_frequencia'),TU:PDFHexString.fromText('Assinatura digital do preceptor - frequência mensal'),Rect:[fieldX,fieldY,width-margin,fieldY+fieldHeight],P:page.ref,F:4,Ff:0,AP:{N:appearance}}));
+    const field=doc.context.register(doc.context.obj({Type:'Annot',Subtype:'Widget',FT:'Sig',T:PDFHexString.fromText(supervision?'assinatura_supervisor_frequencia':'assinatura_preceptor_frequencia'),TU:PDFHexString.fromText(supervision?'Assinatura digital do supervisor - frequência mensal':'Assinatura digital do preceptor - frequência mensal'),Rect:[fieldX,fieldY,width-margin,fieldY+fieldHeight],P:page.ref,F:4,Ff:0,AP:{N:appearance}}));
     form.acroForm.addField(field);page.node.addAnnot(field);
     if(y+57>height-65)throw new Error('Os dados não cabem na ficha mensal de uma página.');
     rule(height-45);text('UEA · Residência Médica em Pediatria',margin,height-34,8,regular,muted);
     const footer='Frequência mensal · Página 1 de 1';text(footer,width-margin-regular.widthOfTextAtSize(footer,8),height-34,8,regular,muted);
-    doc.setTitle('Ficha mensal de frequência - '+resident.nome+' - '+info.label);doc.setAuthor(options.template?'ResidPed UEA':preceptor.nome);doc.setSubject('Frequência mensal de residente em Pediatria');
+    doc.setTitle('Ficha mensal de frequência - '+resident.nome+' - '+info.label);doc.setAuthor(options.template?'ResidPed UEA':preceptor.nome);doc.setSubject(supervision?'Frequência administrativa do cadastro central da supervisão, sem assinatura aplicada':'Frequência mensal de residente em Pediatria');
     return doc.save();
   }
   root.AttendancePDF={monthInfo,prepare,create};
