@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="admin-evaluations.js" defer></script><script src="admin-resident-feedback.js" defer></script><script src="../shared/attendance-records.js" defer></script><script src="admin-security.js" defer></script><link rel="stylesheet" href="../shared/attendance-records.css">
+<script src="admin-evaluations.js" defer></script><script src="admin-resident-feedback.js" defer></script><script src="../shared/attendance-records.js" defer></script><script src="admin-security.js" defer></script><script src="admin-attendance.js" defer></script><link rel="stylesheet" href="../shared/attendance-records.css">
 <meta name="theme-color" content="#006B3F">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -638,7 +638,7 @@ textarea{resize:none;height:80px}
   <p id="supervisionStatus" role="status" aria-live="polite"></p><p id="supervisionSummary" role="status" aria-live="polite"></p>
   <div id="supervisionList"></div><button id="supervisionMore" class="btn btn-secondary" hidden onclick="moreSupervision()">Mostrar mais avaliações</button>
   <div id="supervisionPdfPreview" class="card" hidden><h3 id="supervisionPdfTitle">Ficha de avaliação</h3><div class="supervision-actions"><a id="supervisionPdfDownload" class="btn btn-primary">Baixar PDF</a><button class="btn btn-secondary" onclick="closeSupervisionPdf()">Fechar PDF</button></div><iframe id="supervisionPdfFrame" title="Ficha de avaliação do residente em PDF" src="about:blank"></iframe><p class="supervision-muted">Se a visualização não abrir no celular, use Baixar PDF.</p></div>
-</div><div id="supervisionAttendancePanel" hidden><div id="adminAttendanceRecords"></div></div>
+</div><div id="supervisionAttendancePanel" hidden><div id="adminAttendanceEditor"></div><div id="adminAttendanceRecords"></div></div>
 <div id="supervisionSelfPanel" hidden></div><div id="supervisionModulesPanel" hidden></div>
 </div>
 <div id="screen-historico" class="screen">

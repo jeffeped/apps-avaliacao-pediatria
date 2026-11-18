@@ -25,7 +25,7 @@ const supervisionPreceptorKey=item=>item.preceptorId||'sem-identificacao';
 let supervisionDocument='avaliacoes';
 function selectSupervisionDocument(value,load=true){
   if(!['avaliacoes','frequencia','autoavaliacoes','modulos'].includes(value))return;
-  supervisionDocument=value;closeSupervisionPdf();adminAttendanceRecords.reset();resetSupervisionFeedback();
+  supervisionDocument=value;closeSupervisionPdf();adminAttendanceRecords.reset();window.supervisionAttendanceEditor?.reset();resetSupervisionFeedback();
   for(const [name,key] of [['Evaluations','avaliacoes'],['Attendance','frequencia'],['Self','autoavaliacoes'],['Modules','modulos']]){
     supervisionEl('supervision'+name+'Panel').hidden=value!==key;
     supervisionEl('supervision'+name+'Tab').setAttribute('aria-pressed',String(value===key));
@@ -39,7 +39,7 @@ async function supervisionApi(dados,tipo='avaliacoes_admin'){
     const response=await fetch(RESIDENT_PORTAL_API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({tipo,token:AUTOAVAL_ADMIN_TOKEN,dados}),signal:controller.signal});
     if(!response.ok)throw new Error('Não foi possível conectar ao serviço.');
     const result=await response.json();
-    if(!result.ok){const error=new Error(result.erro||'Não foi possível concluir a consulta.');error.accessDenied=result.codigo==='ACESSO_NEGADO';throw error;}
+    if(!result.ok||(result.erros&&result.erros.length)){const error=new Error(result.erro||'Não foi possível concluir a consulta.');error.accessDenied=result.codigo==='ACESSO_NEGADO';error.codigo=result.codigo;throw error;}
     return result;
   }catch(error){if(error.name==='AbortError')throw new Error('A consulta demorou mais que o esperado. Tente novamente.');throw error;}
   finally{clearTimeout(timeout);}
@@ -58,7 +58,7 @@ function closeSupervisionPdf(){
 
 function signOutSupervision(){
   AUTOAVAL_ADMIN_TOKEN='';AUTOAVAL_ADMIN_DATA=[];
-  adminAttendanceRecords.reset();
+  adminAttendanceRecords.reset();window.supervisionAttendanceEditor?.reset();
   resetSupervisionFeedback();
   supervisionState.request++;supervisionState.data=[];supervisionState.filtered=[];
   closeSupervisionPdf();
@@ -74,7 +74,7 @@ function signOutSupervision(){
 
 async function loadSupervision(){
   if(supervisionFeedback[supervisionDocument]){supervisionState.request++;closeSupervisionPdf();return supervisionFeedback[supervisionDocument].load();}
-  if(supervisionDocument==='frequencia'){supervisionState.request++;closeSupervisionPdf();return adminAttendanceRecords.load();}
+  if(supervisionDocument==='frequencia'){supervisionState.request++;closeSupervisionPdf();return Promise.all([adminAttendanceRecords.load(),window.supervisionAttendanceEditor?.load()]);}
   const request=++supervisionState.request;
   closeSupervisionPdf();supervisionState.data=[];supervisionState.filtered=[];
   supervisionEl('supervisionList').innerHTML='';supervisionEl('supervisionSummary').textContent='';supervisionEl('supervisionMore').hidden=true;
