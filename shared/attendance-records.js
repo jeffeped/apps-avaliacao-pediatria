@@ -1,6 +1,6 @@
 // As cópias e a sessão ficam em memória. O servidor autoriza cada leitura.
 function createAttendanceRecords(root,options){
-  const state={items:[],request:0,pdfRequest:0,url:'',busy:false,limit:20};
+  const state={items:[],residents:[],request:0,pdfRequest:0,url:'',busy:false,limit:20};
   const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const month=value=>/^(20\d{2})-(0[1-9]|1[0-2])$/.test(value)?new Date(value+'-15T12:00:00Z').toLocaleDateString('pt-BR',{month:'long',year:'numeric',timeZone:'UTC'}):String(value||'Mês não informado');
   root.classList.add('frequency-records');
@@ -13,7 +13,7 @@ function createAttendanceRecords(root,options){
     root.querySelectorAll('[data-file]').forEach(b=>b.disabled=false);
   }
   function reset(){
-    state.request++;state.items=[];close();el('list').innerHTML='';el('summary').textContent='';el('status').textContent='';el('more').hidden=true;el('refresh').disabled=false;
+    state.request++;state.items=[];state.residents=[];close();el('list').innerHTML='';el('summary').textContent='';el('status').textContent='';el('more').hidden=true;el('refresh').disabled=false;
     el('controls').hidden=true;el('access').hidden=!options.admin;
     root.querySelectorAll('select').forEach(select=>{select.selectedIndex=0;while(select.options.length>1)select.remove(1);});el('month').value='';
   }
@@ -24,6 +24,15 @@ function createAttendanceRecords(root,options){
     el('list').innerHTML=items.length?items.slice(0,state.limit).map(f=>'<article class="card"><h3>'+esc(options.admin?f.residente:month(f.mes))+'</h3><p><strong>Mês:</strong> '+esc(month(f.mes))+'<br><strong>Módulo:</strong> '+esc(f.modulo)+' · '+esc(f.ano)+'<br><strong>Preceptor:</strong> '+esc(f.preceptor)+'<br><strong>Emitida em:</strong> '+esc(f.emitidoEm.replace(/^(\d{4})-(\d{2})-(\d{2})/,'$3/$2/$1'))+'</p><div class="frequency-actions"><button data-file="'+state.items.indexOf(f)+'">Visualizar PDF</button><button data-file="'+state.items.indexOf(f)+'" data-save>Baixar PDF</button></div></article>').join(''):'<div class="card">'+(state.items.length?'Nenhuma ficha corresponde aos filtros.':'Ainda não há fichas de frequência emitidas. Elas aparecerão aqui após a emissão pelo preceptor.')+'</div>';
     el('more').hidden=items.length<=state.limit;
   }
+  function fillPeople(){
+    if(!options.admin)return;
+    for(const [name,key,label,all] of [['resident','residenteId','residente','Todos os residentes'],['preceptor','preceptorId','preceptor','Todos os preceptores']]){
+      const previous=el(name).value,choices=new Map([...state.items,...(name==='resident'?state.residents:[])].filter(f=>f[key]).map(f=>[f[key],f[label]]));
+      el(name).innerHTML='<option value="">'+all+'</option>'+[...choices].sort((a,b)=>a[1].localeCompare(b[1],'pt-BR')).map(([key,value])=>'<option value="'+esc(key)+'">'+esc(value)+'</option>').join('');
+      if(choices.has(previous))el(name).value=previous;
+    }
+  }
+  function setResidents(items){state.residents=items;fillPeople();}
   async function load(){
     const request=++state.request;close();state.items=[];el('list').innerHTML='';el('summary').textContent='';el('more').hidden=true;
     const allowed=options.authorized();el('access').hidden=!options.admin||allowed;el('controls').hidden=!allowed;
@@ -34,11 +43,7 @@ function createAttendanceRecords(root,options){
       if(request!==state.request||!options.authorized())return;
       if(!Array.isArray(response.fichas))throw new Error('O serviço não retornou a lista de fichas.');
       state.items=response.fichas;
-      if(options.admin)for(const [name,key,label,all] of [['resident','residenteId','residente','Todos os residentes'],['preceptor','preceptorId','preceptor','Todos os preceptores']]){
-        const previous=el(name).value,choices=new Map(state.items.map(f=>[f[key],f[label]]));
-        el(name).innerHTML='<option value="">'+all+'</option>'+[...choices].sort((a,b)=>a[1].localeCompare(b[1],'pt-BR')).map(([key,value])=>'<option value="'+esc(key)+'">'+esc(value)+'</option>').join('');
-        if(choices.has(previous))el(name).value=previous;
-      }
+      fillPeople();
       filter();el('status').textContent='Consulta atualizada. Os PDFs são as cópias emitidas pelos preceptores.';
     }catch(error){if(request!==state.request)return;if(error.accessDenied)options.signout();el('status').textContent='Não foi possível carregar as fichas. '+error.message+' Tente atualizar novamente.';}
     finally{if(request===state.request)el('refresh').disabled=false;}
@@ -68,7 +73,7 @@ function createAttendanceRecords(root,options){
   if(options.admin){el('login').onclick=options.login;el('signout').onclick=options.signout;el('resident').onchange=el('preceptor').onchange=()=>filter();}
   el('list').onclick=event=>{const button=event.target.closest('[data-file]');if(button)open(Number(button.dataset.file),button.hasAttribute('data-save'));};
   window.addEventListener('beforeunload',close);
-  return {load,reset,close};
+  return {load,reset,close,setResidents};
 }
 
 let residentAttendanceRecords,adminAttendanceRecords;

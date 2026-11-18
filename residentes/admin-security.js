@@ -159,7 +159,7 @@
   window.enviarParaSheets=async(tipo,dados)=>{const id=enqueue(tipo,dados);if(!id)return false;await flush();return !queue().some(x=>x.queueId===id);};
   window.sincronizarAuto=window.enviarParaSheets;
   window.registrarPonto=async()=>showToast('Registre o ponto no Portal do Residente, com sua conta Google.','e');
-  window.ResidPedSecurity={review:reviewCadastros,sync,logout:logoutSync,exportPreserved,status,flatten};
+  window.ResidPedSecurity={review:reviewCadastros,sync,logout:logoutSync,exportPreserved,status,flatten,invalidateRevision(){setRevision('');status('Frequência central atualizada. Confira o cadastro central antes de sincronizar alterações deste aparelho.');}};
   function init(){migrateQueue();[['security-review',reviewCadastros],['security-login',()=>{loginAction='review';abrirLoginAutoavaliacoes();}],['security-logout',logoutSync],['security-preserved',exportPreserved]].forEach(([id,fn])=>{const b=document.getElementById(id);if(b)b.onclick=fn;});status();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
