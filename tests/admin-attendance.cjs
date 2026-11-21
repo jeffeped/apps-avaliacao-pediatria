@@ -26,7 +26,7 @@ const dom=new JSDOM(fs.readFileSync(path.join(root,'residentes/index.html'),'utf
   w.HTMLElement.prototype.scrollIntoView=function(){};
   w.fetch=async(url,options)=>{
    if(String(url).includes('uea-logo-verde.pdf')){const data=fs.readFileSync(path.join(root,'portal-preceptor/assets/uea-logo-verde.pdf'));return{ok:!logoFails,arrayBuffer:async()=>data.buffer.slice(data.byteOffset,data.byteOffset+data.byteLength)};}
-   const body=JSON.parse(options.body);calls.push(clone(body));let result={ok:true,avaliacoes:[],autoavaliacoes:[],fichas:[]};
+   const body=JSON.parse(options.body);calls.push(clone(body));let result={ok:true,avaliacoes:[{id:'eval1',residenteId:'id1',residente:'Residente 01',ano:'R2',preceptor:'Preceptor de teste',data:'2026-09-30'}],autoavaliacoes:[],fichas:[]};
    if(body.tipo==='cadastros_admin'){
     assert.equal(body.token,authToken);
     if(delayRead){delayRead=false;await new Promise(resolve=>releaseRead=resolve);}
@@ -55,7 +55,31 @@ const edit=(day,shift,value)=>{const el=doc.querySelector('#adminAttendanceEdito
 (async()=>{try{
  await wait(()=>typeof w.supervisionAttendanceEditor?.load==='function');assert.equal(calls.filter(x=>x.tipo==='cadastros_admin').length,0);
  await w.supervisionAttendanceEditor.load();assert.equal(e('controls').hidden,true);
- w.eval("AUTOAVAL_ADMIN_TOKEN="+JSON.stringify(authToken));w.selectSupervisionDocument('frequencia',false);await w.loadSupervision();
+ const panel=doc.getElementById('supervisionDashboardPanel');
+ await w.selectSupervisionDocument('painel');
+ assert.equal(panel.querySelectorAll('article').length,0);
+ w.eval("AUTOAVAL_ADMIN_TOKEN="+JSON.stringify(authToken));
+ await w.loadSupervision();
+ assert.equal(panel.querySelectorAll('article').length,17);
+ const filter=(id,value,event='change')=>{
+  const field=doc.getElementById(id);field.value=value;field.dispatchEvent(new w.Event(event));
+ };
+ filter('residencyWeek','2026-10-01');filter('residencyYear','R2');
+ filter('residencySearch','Residente 01','input');
+ assert.equal(panel.querySelectorAll('article').length,1);
+ assert.match(panel.querySelector('article').textContent,/1 presença\(s\) · 0 falta\(s\) · 1 atraso\(s\)/);
+ assert.match(panel.querySelector('article').textContent,/30\/09\/2026 · Preceptor de teste/);
+ filter('residencyAttendance','absent');assert.equal(panel.querySelectorAll('article').length,0);
+ filter('residencyAttendance','');
+ panel.querySelector('[data-evaluations]').click();
+ await wait(()=>doc.getElementById('supervisionResident').value==='id1');
+ assert.equal(doc.querySelectorAll('#supervisionList article').length,1);
+ await w.selectSupervisionDocument('painel');
+ panel.querySelector('[data-frequency]').click();
+ await wait(()=>e('resident').value===JSON.stringify(['R2','id1']));
+ assert.equal(e('month').value,'2026-10');
+ assert.equal(panel.querySelectorAll('article').length,0);
+ assert.equal(writes.length,0);
  assert.equal(e('resident').options.length,18);assert.equal(doc.querySelector('#adminAttendanceRecords [data-resident]').options.length,18);assert.equal(writes.length,0);
  open('2026-10');prepare();assert.match(e('summary').textContent,/31 dia\(s\), 62 turno\(s\)/);assert.match(e('summary').textContent,/2 registro\(s\) anterior/);assert.equal(e('save').disabled,true);
  const localBefore=w.localStorage.getItem('residped_v3');await save();assert.match(e('status').textContent,/Frequência salva e conferida/);assert.equal(writes.length,1);
@@ -78,5 +102,5 @@ const edit=(day,shift,value)=>{const el=doc.querySelector('#adminAttendanceEdito
  // Consulta pendente descartada ao encerrar a sessão.
  delayRead=true;const loading=w.supervisionAttendanceEditor.load();await wait(()=>!!releaseRead);w.signOutSupervision();releaseRead();await loading;assert.equal(e('resident').options.length,1);assert.equal(e('controls').hidden,true);
  deny=true;w.eval("AUTOAVAL_ADMIN_TOKEN="+JSON.stringify(authToken));await w.supervisionAttendanceEditor.load();assert.equal(e('resident').options.length,1);assert.match(e('status').textContent,/Conta sem autorização/);
- assert.deepEqual(errors,[]);console.log('OK: integração DOM; 17 residentes sem PDF; outubro inteiro; novembro até 18; turnos; fins de semana; outros residentes e meses preservados; revisão concorrente; falha de gravação; sessão e autorização; data de Manaus; nomes escapados.');
+ assert.deepEqual(errors,[]);console.log('OK: painel semanal e atalhos; integração DOM; 17 residentes sem PDF; outubro inteiro; novembro até 18; turnos; fins de semana; outros residentes e meses preservados; revisão concorrente; falha de gravação; sessão e autorização; data de Manaus; nomes escapados.');
 }finally{dom.window.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

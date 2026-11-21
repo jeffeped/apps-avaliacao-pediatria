@@ -1,0 +1,14 @@
+.residency-overview .supervision-filters { margin-top: 16px; }
+.residency-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+  gap: 12px;
+  padding: 0 12px 16px;
+}
+.residency-grid .card { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.residency-grid h3 { font-size: 16px; margin-bottom: 6px; }
+.residency-grid dl { margin: 12px 0; font-size: 13px; }
+.residency-grid dt { font-weight: 700; margin-top: 9px; }
+.residency-grid dd { margin: 2px 0 0; }
+.residency-grid .supervision-actions { margin-top: 14px; }
+.residency-grid .supervision-actions .btn { width: auto; }
