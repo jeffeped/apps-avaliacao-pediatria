@@ -24,13 +24,13 @@ const supervisionPreceptorKey=item=>item.preceptorId||'sem-identificacao';
 
 let supervisionDocument='avaliacoes';
 function selectSupervisionDocument(value,load=true){
-  if(!['avaliacoes','frequencia','autoavaliacoes','modulos'].includes(value))return;
-  supervisionDocument=value;closeSupervisionPdf();adminAttendanceRecords.reset();window.supervisionAttendanceEditor?.reset();resetSupervisionFeedback();
-  for(const [name,key] of [['Evaluations','avaliacoes'],['Attendance','frequencia'],['Self','autoavaliacoes'],['Modules','modulos']]){
+  if(!['painel','avaliacoes','frequencia','autoavaliacoes','modulos'].includes(value))return;
+  supervisionDocument=value;window.residencyDashboard?.reset();closeSupervisionPdf();adminAttendanceRecords.reset();window.supervisionAttendanceEditor?.reset();resetSupervisionFeedback();
+  for(const [name,key] of [['Dashboard','painel'],['Evaluations','avaliacoes'],['Attendance','frequencia'],['Self','autoavaliacoes'],['Modules','modulos']]){
     supervisionEl('supervision'+name+'Panel').hidden=value!==key;
     supervisionEl('supervision'+name+'Tab').setAttribute('aria-pressed',String(value===key));
   }
-  if(load)loadSupervision();
+  if(load)return loadSupervision();
 }
 
 async function supervisionApi(dados,tipo='avaliacoes_admin'){
@@ -58,6 +58,7 @@ function closeSupervisionPdf(){
 
 function signOutSupervision(){
   AUTOAVAL_ADMIN_TOKEN='';AUTOAVAL_ADMIN_DATA=[];
+  window.residencyDashboard?.reset();
   adminAttendanceRecords.reset();window.supervisionAttendanceEditor?.reset();
   resetSupervisionFeedback();
   supervisionState.request++;supervisionState.data=[];supervisionState.filtered=[];
@@ -73,6 +74,7 @@ function signOutSupervision(){
 }
 
 async function loadSupervision(){
+  if(supervisionDocument==='painel'){supervisionState.request++;closeSupervisionPdf();return window.residencyDashboard?.load();}
   if(supervisionFeedback[supervisionDocument]){supervisionState.request++;closeSupervisionPdf();return supervisionFeedback[supervisionDocument].load();}
   if(supervisionDocument==='frequencia'){supervisionState.request++;closeSupervisionPdf();return Promise.all([adminAttendanceRecords.load(),window.supervisionAttendanceEditor?.load()]);}
   const request=++supervisionState.request;

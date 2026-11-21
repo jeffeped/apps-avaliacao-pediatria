@@ -193,6 +193,12 @@
       el('selection').textContent=selected.size+' dia(s) selecionado(s). '+changes().length+' turno(s) alterado(s) para revisão.';
     };
     el('review').onclick=review;el('confirm').onchange=()=>{el('save').disabled=!pending||!el('confirm').checked;};el('save').onclick=save;
-    window.supervisionAttendanceEditor={load,reset};
+    function selectResident(key,month){
+      if(busy||!credential()||!roster.some(item=>item.key===key))return;
+      el('resident').value=key;
+      el('month').value=month;
+      openMonth();
+    }
+    window.supervisionAttendanceEditor={load,reset,selectResident};
   });
 })();
