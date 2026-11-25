@@ -6,6 +6,7 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="admin-evaluations.js" defer></script>
 <script src="admin-residency-dashboard.js" defer></script>
+<script src="admin-epa3.js" defer></script>
 <link rel="stylesheet" href="admin-residency-dashboard.css">
 <script src="admin-resident-feedback.js" defer></script><script src="../shared/attendance-records.js" defer></script><script src="admin-security.js" defer></script><script src="../portal-preceptor/vendor/pdf-lib.min.js" defer></script><script src="../portal-preceptor/evaluation-pdf.js" defer></script><script src="../portal-preceptor/attendance-pdf.js" defer></script><script src="admin-attendance-pdf.js" defer></script><script src="admin-attendance.js" defer></script><link rel="stylesheet" href="../shared/attendance-records.css">
 <meta name="theme-color" content="#006B3F">
@@ -622,8 +623,9 @@ textarea{resize:none;height:80px}
 <!-- TELA: HISTÓRICO -->
 <!-- ============================================================ -->
 <div id="screen-supervisao" class="screen">
-  <div class="supervision-documents" aria-label="Consultas da supervisão"><button id="supervisionDashboardTab" aria-pressed="false" onclick="selectSupervisionDocument('painel')">Painel da residência</button><button id="supervisionEvaluationsTab" aria-pressed="true" onclick="selectSupervisionDocument('avaliacoes')">Avaliações</button><button id="supervisionAttendanceTab" aria-pressed="false" onclick="selectSupervisionDocument('frequencia')">Frequência mensal</button><button id="supervisionSelfTab" aria-pressed="false" onclick="selectSupervisionDocument('autoavaliacoes')">Autoavaliações</button><button id="supervisionModulesTab" aria-pressed="false" onclick="selectSupervisionDocument('modulos')">Avaliação dos módulos</button></div>
+  <div class="supervision-documents" aria-label="Consultas da supervisão"><button id="supervisionDashboardTab" aria-pressed="false" onclick="selectSupervisionDocument('painel')">Painel da residência</button><button id="supervisionEvaluationsTab" aria-pressed="true" onclick="selectSupervisionDocument('avaliacoes')">Avaliações</button><button id="supervisionAttendanceTab" aria-pressed="false" onclick="selectSupervisionDocument('frequencia')">Frequência mensal</button><button id="supervisionSelfTab" aria-pressed="false" onclick="selectSupervisionDocument('autoavaliacoes')">Autoavaliações</button><button id="supervisionEpa3Tab" aria-pressed="false" onclick="selectSupervisionDocument('epa3')">EPA 3 · R2 UTIN</button><button id="supervisionModulesTab" aria-pressed="false" onclick="selectSupervisionDocument('modulos')">Avaliação dos módulos</button></div>
   <div id="supervisionDashboardPanel" hidden></div>
+  <div id="supervisionEpa3Panel" hidden></div>
   <div id="supervisionEvaluationsPanel">
   <div class="sec-hdr verde"><h2>📑 Avaliações dos residentes</h2><p>Consulta da supervisão · avaliações recebidas dos preceptores</p></div>
   <div id="supervisionAccess" class="card"><div class="card-title">Acesso da supervisão</div><p class="supervision-muted">Entre com sua conta Google autorizada para consultar as avaliações de todos os residentes e as fichas PDF emitidas.</p><button class="btn btn-primary" onclick="abrirLoginAutoavaliacoes()" style="margin-top:14px">Entrar com Google</button></div>
@@ -1171,7 +1173,7 @@ function showScreen(name, btn) {
   if(name==='config') restoreConfig();
   if(name==='historico') renderHistorico();
   if(name==='supervisao') loadSupervision();
-  else {closeSupervisionPdf();adminAttendanceRecords.reset();resetSupervisionFeedback();}
+  else {closeSupervisionPdf();adminAttendanceRecords.reset();resetSupervisionFeedback();window.supervisionEpa3?.reset();}
   if(name==='dashboard') renderDashboard();
   if(name==='autoaval') renderAutoCompetencias();
   if(name==='ponto') { renderPontoResidentes(); renderPonto(); }

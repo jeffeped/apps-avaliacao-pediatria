@@ -24,9 +24,9 @@ const supervisionPreceptorKey=item=>item.preceptorId||'sem-identificacao';
 
 let supervisionDocument='avaliacoes';
 function selectSupervisionDocument(value,load=true){
-  if(!['painel','avaliacoes','frequencia','autoavaliacoes','modulos'].includes(value))return;
-  supervisionDocument=value;window.residencyDashboard?.reset();closeSupervisionPdf();adminAttendanceRecords.reset();window.supervisionAttendanceEditor?.reset();resetSupervisionFeedback();
-  for(const [name,key] of [['Dashboard','painel'],['Evaluations','avaliacoes'],['Attendance','frequencia'],['Self','autoavaliacoes'],['Modules','modulos']]){
+  if(!['painel','avaliacoes','frequencia','autoavaliacoes','modulos','epa3'].includes(value))return;
+  supervisionDocument=value;window.residencyDashboard?.reset();closeSupervisionPdf();adminAttendanceRecords.reset();window.supervisionAttendanceEditor?.reset();resetSupervisionFeedback();window.supervisionEpa3?.reset();
+  for(const [name,key] of [['Dashboard','painel'],['Evaluations','avaliacoes'],['Attendance','frequencia'],['Self','autoavaliacoes'],['Modules','modulos'],['Epa3','epa3']]){
     supervisionEl('supervision'+name+'Panel').hidden=value!==key;
     supervisionEl('supervision'+name+'Tab').setAttribute('aria-pressed',String(value===key));
   }
@@ -60,7 +60,7 @@ function signOutSupervision(){
   AUTOAVAL_ADMIN_TOKEN='';AUTOAVAL_ADMIN_DATA=[];
   window.residencyDashboard?.reset();
   adminAttendanceRecords.reset();window.supervisionAttendanceEditor?.reset();
-  resetSupervisionFeedback();
+  resetSupervisionFeedback();window.supervisionEpa3?.reset();
   supervisionState.request++;supervisionState.data=[];supervisionState.filtered=[];
   closeSupervisionPdf();
   supervisionEl('supervisionControls').hidden=true;
@@ -74,6 +74,7 @@ function signOutSupervision(){
 }
 
 async function loadSupervision(){
+  if(supervisionDocument==='epa3'){supervisionState.request++;closeSupervisionPdf();return window.supervisionEpa3?.load();}
   if(supervisionDocument==='painel'){supervisionState.request++;closeSupervisionPdf();return window.residencyDashboard?.load();}
   if(supervisionFeedback[supervisionDocument]){supervisionState.request++;closeSupervisionPdf();return supervisionFeedback[supervisionDocument].load();}
   if(supervisionDocument==='frequencia'){supervisionState.request++;closeSupervisionPdf();return Promise.all([adminAttendanceRecords.load(),window.supervisionAttendanceEditor?.load()]);}
